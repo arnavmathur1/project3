@@ -8,7 +8,15 @@
 class Actor : public GraphObject
 {
     Actor();
+    virtual ~Actor();
     
+    void doSomething();
+    
+};
+
+class Wall
+{
+    Wall();
 };
 
 #endif // ACTOR_H_

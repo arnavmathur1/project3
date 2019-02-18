@@ -15,6 +15,7 @@ public:
     virtual void cleanUp();
 
 private:
+    void loadLevel();
 };  
 
 #endif // STUDENTWORLD_H_
