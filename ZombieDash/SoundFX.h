@@ -12,7 +12,7 @@
 class SoundFXController
 {
   public:
-
+  
     void playClip(std::string soundFile)
     {
         if (m_engine != nullptr)

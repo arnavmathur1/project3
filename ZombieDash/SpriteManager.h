@@ -10,7 +10,7 @@
 #ifndef GL_BGRA
 #define GL_BGRA GL_BGRA_EXT
 #endif
-
+  
 #include "GameConstants.h"
 #include <iostream>
 #include <fstream>

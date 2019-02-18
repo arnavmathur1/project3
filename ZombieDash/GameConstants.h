@@ -3,7 +3,7 @@
 
 #include <random>
 #include <utility>
-
+  
 // IDs for the game objects
 
 const int IID_PLAYER               =  0;

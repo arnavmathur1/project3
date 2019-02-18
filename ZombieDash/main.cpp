@@ -11,7 +11,7 @@ bool is_directory(string path)
     DWORD result = GetFileAttributes(path.c_str());
     return result != INVALID_FILE_ATTRIBUTES  &&  (result & FILE_ATTRIBUTE_DIRECTORY);
 }
-#else
+#else  
 #include <sys/stat.h>
 bool is_directory(string path)
 {
@@ -24,7 +24,8 @@ bool is_directory(string path)
   // replace the string literal with a full path name to the directory,
   // e.g., "Z:/CS32/ZombieDash/Assets" or "/Users/fred/cs32/ZombieDash/Assets"
 
-const string assetDirectory = "Assets"; 
+//const string assetDirectory = "Assets";
+const string assetDirectory = "/Users/arnavm/Documents/Xcode Projects/cs32/ZombieDash/DerivedData/ZombieDash/Build/Products/Debug/Assets";
 
 class GameWorld;
 

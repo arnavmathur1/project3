@@ -106,7 +106,7 @@ class GraphObject
     static const int NUM_DEPTHS = 4;
     int     m_imageID;
     double  m_x;
-    double  m_y;
+    double  m_y;  
     double  m_destX;
     double  m_destY;
     int     m_animationNumber;

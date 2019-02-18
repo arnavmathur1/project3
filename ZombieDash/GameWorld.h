@@ -9,7 +9,7 @@ const int START_PLAYER_LIVES = 3;
 class GameController;
 
 class GameWorld
-{
+{  
 public:
 
     GameWorld(std::string assetPath)

@@ -11,7 +11,7 @@ class Level
 {
 public:
 
-    enum MazeEntry {
+    enum MazeEntry { 
         empty, player, dumb_zombie, smart_zombie, citizen, wall, exit, pit,
         vaccine_goodie, gas_can_goodie, landmine_goodie
     };

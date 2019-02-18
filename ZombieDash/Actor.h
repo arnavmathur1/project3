@@ -5,4 +5,10 @@
 
 // Students:  Add code to this file, Actor.cpp, StudentWorld.h, and StudentWorld.cpp
 
+class Actor : public GraphObject
+{
+    Actor();
+    
+};
+
 #endif // ACTOR_H_

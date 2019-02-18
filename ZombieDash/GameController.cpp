@@ -11,7 +11,7 @@
 #include <cstdlib>
 #include <algorithm>
 using namespace std;
-
+  
 /*
 spriteWidth = .67
 spritesPerRow = 16

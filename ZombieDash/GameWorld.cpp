@@ -3,7 +3,7 @@
 #include <string>
 #include <cstdlib>
 using namespace std;
-
+  
 bool GameWorld::getKey(int& value)
 {
     bool gotKey = m_controller->getLastKey(value);

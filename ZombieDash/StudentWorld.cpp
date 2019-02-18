@@ -13,7 +13,7 @@ GameWorld* createStudentWorld(string assetPath)
 StudentWorld::StudentWorld(string assetPath)
 : GameWorld(assetPath)
 {
-}
+}  
 
 int StudentWorld::init()
 {

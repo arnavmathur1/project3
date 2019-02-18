@@ -15,6 +15,6 @@ public:
     virtual void cleanUp();
 
 private:
-};
+};  
 
 #endif // STUDENTWORLD_H_
