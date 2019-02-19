@@ -3,20 +3,33 @@
 
 #include "GraphObject.h"
 
+
+
 // Students:  Add code to this file, Actor.cpp, StudentWorld.h, and StudentWorld.cpp
 
 class Actor : public GraphObject
 {
-    Actor();
+public:
+    Actor(int imgID, int x, int y);
     virtual ~Actor();
     
     void doSomething();
     
 };
 
-class Wall
+class Wall: public Actor
 {
-    Wall();
+public:
+    Wall(int imgID, int x, int y);
+    virtual ~Wall();
 };
+
+class Penelope: public Actor
+{
+public:
+    Penelope(int imgID, int x, int y);
+    virtual ~Penelope();
+};
+
 
 #endif // ACTOR_H_
