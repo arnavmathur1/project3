@@ -4,7 +4,7 @@
 #include "GraphObject.h"
 
 
-
+class StudentWorld;
 // Students:  Add code to this file, Actor.cpp, StudentWorld.h, and StudentWorld.cpp
 
 class Actor : public GraphObject
@@ -13,7 +13,7 @@ public:
     Actor(int imgID, int x, int y);
     virtual ~Actor();
     
-    void doSomething();
+    virtual void doSomething();
     
 };
 
@@ -29,6 +29,12 @@ class Penelope: public Actor
 public:
     Penelope(int imgID, int x, int y);
     virtual ~Penelope();
+    virtual void doSomething(int dir);
+    
+private:
+    bool m_infectedStatus = false;
+    int m_infectionCount = 0;
+    StudentWorld *swptr;
 };
 
 

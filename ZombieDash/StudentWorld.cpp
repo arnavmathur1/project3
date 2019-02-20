@@ -37,13 +37,10 @@ int StudentWorld::move()
 {
     // This code is here merely to allow the game to build, run, and terminate after you hit enter.
     // Notice that the return value GWSTATUS_PLAYER_DIED will cause our framework to end the current level.
-    int x = 0;
-    getKey(x);
-    if (x == KEY_PRESS_UP)
-    {
-        cout<<"OK";
-        decLives();
-    }
+    int userInput = -1;
+    getKey(userInput);
+    penelopeptr->doSomething(userInput);
+    
     if(getLives() == 0)
         return GWSTATUS_PLAYER_DIED;
     
@@ -53,6 +50,7 @@ int StudentWorld::move()
 
 void StudentWorld::cleanUp()
 {
+    
     for (int i = 0; i<actorVector.size(); i++)
     {
         delete actorVector[i];
@@ -61,7 +59,7 @@ void StudentWorld::cleanUp()
     actorVector.clear();
     
     if (actorVector.empty())
-        cout<<"Mission ACCOMPLISHED";
+        cout<<"  Mission ACCOMPLISHED";
     
     /*for (int i = 0; i<actorVector.size(); i++)
         cout<<actorVector[i];*/
@@ -86,7 +84,7 @@ void StudentWorld::loadLevel()
             switch (xy)
             {
                 case Level::player:
-                    new Penelope(0, true_x, true_y); //allocating a new Penelope for this level
+                    penelopeptr = new Penelope(0, true_x, true_y); //allocating a new Penelope for this level
                     break;
                 case Level::wall:
                     actorptr = new Wall(11, true_x, true_y);
