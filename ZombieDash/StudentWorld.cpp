@@ -94,7 +94,7 @@ void StudentWorld::loadLevel()
                     break;
                 case Level::empty:
                 default:
-                    break;
+                    break; 
             }
         }
     }

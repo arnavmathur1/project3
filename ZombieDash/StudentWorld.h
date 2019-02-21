@@ -30,5 +30,5 @@ private:
     vector<Actor*> actorVector;
     Penelope* penelopeptr;
 };  
-
+ 
 #endif // STUDENTWORLD_H_

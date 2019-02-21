@@ -13,7 +13,7 @@ public:
     Actor(int imgID, int x, int y, StudentWorld* sw);
     virtual ~Actor();
     
-    virtual void doSomething();
+    virtual void doSomething(); 
     
     bool checkActorMove(double x, double y,  Actor* actorPassed);
     

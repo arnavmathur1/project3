@@ -81,7 +81,7 @@ void Penelope::doSomething()
                 return;
             default:
                 break;
-        }
+        } 
     }
     
 }
