@@ -21,6 +21,8 @@ public:
     virtual int init();
     virtual int move();
     virtual void cleanUp();
+    
+    bool blockCheck(double dest_x,double dest_y,  Actor* thisActor) const;
 
 private:
     void loadLevel() ;
