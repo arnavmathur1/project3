@@ -14,12 +14,13 @@ public:
     virtual ~Actor();
     
     virtual void doSomething(); 
-    
+    virtual bool canUseExit();
     //Checks whether a proposed move by an actor is valid
     bool checkActorMove(double x, double y,  Actor* actorPassed);
     
     // Does this object block agent movement?
     virtual bool blocksMovement() const;
+    bool touching(Actor* a1, Actor* a2);
 
     
     StudentWorld* getWorld() const;
@@ -35,6 +36,7 @@ public:
     Agent(int imageID, double x, double y, StudentWorld* sw, int dir);
     virtual bool blocksMovement() const;
     //virtual bool triggersOnlyActiveLandmines() const;
+    void moveHelper(double x, double y, int dir, Actor* ap);
 };
 
 
@@ -62,7 +64,7 @@ public:
     Human(int imageID, double x, double y, StudentWorld* sw);
     //virtual void beVomitedOnIfAppropriate();
     //virtual bool triggersZombieVomit() const;
-    
+    virtual bool canUseExit();
     // Make this human uninfected by vomit.
     void clearInfection();
     
@@ -78,10 +80,13 @@ class Citizen : public Human
 public:
     Citizen(double x, double y, StudentWorld* sw);
     virtual void doSomething();
-    //virtual void useExitIfAppropriate();
     virtual void dieByFallOrBurnIfAppropriate();
+    bool isParalysed();
+    
 private:
+
     bool m_alive;
+    bool m_paralysed;
 };
 
 class Wall: public Actor
@@ -109,5 +114,27 @@ private:
     
 };
 
+
+class Zombie : public Agent
+{
+public:
+    Zombie(StudentWorld* w,  double x, double y);
+};
+
+class DumbZombie : public Zombie
+{
+public:
+    DumbZombie(StudentWorld* w,  double x, double y);
+    virtual void doSomething();
+    virtual void dieByFallOrBurnIfAppropriate();
+};
+
+class SmartZombie : public Zombie
+{
+public:
+    SmartZombie(StudentWorld* w,  double x, double y);
+    virtual void doSomething();
+    virtual void dieByFallOrBurnIfAppropriate();
+};
 
 #endif // ACTOR_H_

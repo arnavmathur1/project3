@@ -14,7 +14,7 @@ using namespace std;
 
 GameWorld* createStudentWorld(string assetPath)
 {
-	return new StudentWorld(assetPath);
+    return new StudentWorld(assetPath);
 }
 
 // Students:  Add code to this file, StudentWorld.h, Actor.h and Actor.cpp
@@ -42,19 +42,32 @@ int StudentWorld::move()
     // This code is here merely to allow the game to build, run, and terminate after you hit enter.
     // Notice that the return value GWSTATUS_PLAYER_DIED will cause our framework to end the current level.
     
-    if (m_levelCompleted)
-    {
-        cout<<m_nCitizens;
-        cout<<"WE DONE";
-        return GWSTATUS_FINISHED_LEVEL;
-    }
+    
     
     if(getLives() == 0)
         return GWSTATUS_PLAYER_DIED;
     
     for (int a = 0; a<actorVector.size(); a++)
     {
-       actorVector[a]->doSomething();
+        actorVector[a]->doSomething();
+        
+        
+        if (actorVector[a]->canUseExit())
+        {
+            if (actorVector[a] == penelopeptr)
+            {
+                if (m_levelCompleted)
+                {
+                    cout<<m_nCitizens;
+                    cout<<"WE DONE";
+                    playSound(SOUND_LEVEL_FINISHED);
+                    return GWSTATUS_FINISHED_LEVEL;
+                }
+            }
+            
+            
+        }
+        
     }
     
     
@@ -76,17 +89,17 @@ void StudentWorld::cleanUp()
     if (actorVector.empty())
         cout<<"  Mission ACCOMPLISHED";
     
-
+    
 }
 
 void StudentWorld::loadLevel()
 {
     m_nCitizens = 0;
-
+    
     Level lev(assetPath());
     string levelFile = "level02.txt";
     lev.loadLevel(levelFile); //loading the file
-   
+    
     for (int y = 0; y<LEVEL_HEIGHT; y++) //Iterating through every coordinate within the maze
     {
         for(int x = 0; x<LEVEL_WIDTH; x++)
@@ -124,7 +137,7 @@ void StudentWorld::loadLevel()
                     
                 case Level::empty:
                 default:
-                    break; 
+                    break;
             }
         }
     }
@@ -145,7 +158,7 @@ bool StudentWorld::blockCheck(double dest_x, double dest_y, Actor* actorPassed) 
     {
         Actor *thisActor = actorVector[i];
         
-     
+        
         
         double BRightX = thisActor->getX()+SPRITE_WIDTH-1; //TOP RIGHT CORNER coordinates of the object that could potentially block move (object B)
         double BRightY = thisActor->getY()+SPRITE_HEIGHT-1;
@@ -154,14 +167,14 @@ bool StudentWorld::blockCheck(double dest_x, double dest_y, Actor* actorPassed) 
         if(thisActor == actorPassed) //We do not want to inhibit movement by blocking ourselves
             continue;
         
-         //A condition that took me FOREVER to code but checks for overlaps at ANY of the 4 vertices of either object (basically some common area or shared edge prevents movement)
+        //A condition that took me FOREVER to code but checks for overlaps at ANY of the 4 vertices of either object (basically some common area or shared edge prevents movement)
         
         if    ((ARightX>=thisActor->getX() && ARightY>=thisActor->getY() && ARightX<=BRightX && ARightY<=BRightY)
-            || (BRightX>=dest_x && BRightY>=dest_y && BRightX<=ARightX && BRightY<=ARightY)
-            || (ARightX>=thisActor->getX() && dest_x<=thisActor->getX() && dest_y>=thisActor->getY() && dest_y<=thisActor->getY()+SPRITE_HEIGHT-1)
-            || (dest_x<=BRightX && dest_x>=thisActor->getX() && ARightY>=thisActor->getY() && ARightY<=BRightY))
+               || (BRightX>=dest_x && BRightY>=dest_y && BRightX<=ARightX && BRightY<=ARightY)
+               || (ARightX>=thisActor->getX() && dest_x<=thisActor->getX() && dest_y>=thisActor->getY() && dest_y<=thisActor->getY()+SPRITE_HEIGHT-1)
+               || (dest_x<=BRightX && dest_x>=thisActor->getX() && ARightY>=thisActor->getY() && ARightY<=BRightY))
             
-           
+            
         {
             
             if (!thisActor->blocksMovement()) //if the actor does not block movement, then the proposed move is valid
@@ -170,11 +183,11 @@ bool StudentWorld::blockCheck(double dest_x, double dest_y, Actor* actorPassed) 
                 return true;
             }
             
-           
+            
             return false;
             
         }
-
+        
     }
     return true;
 }
@@ -199,26 +212,9 @@ Actor* StudentWorld :: getPenelopePointer()
 }
 
 
-bool StudentWorld::touching(Actor *a1, Actor *a2)
-{
-    
-    
-    double dx = a1->getX() - a2->getX();
-    double dy = a1->getY() - a2->getY();
-    
-    double distance = sqrt((dx*dx) + (dy*dy));
-    //cout<<distance<<" ";
-    if (distance <= 10)
-    {
-        return true;
-    }
-    
-    return false;
-}
 
 bool StudentWorld::noMoreCitizens()
 {
-    cout<<m_nCitizens;
     
     if (m_nCitizens == 0)
         return true;
