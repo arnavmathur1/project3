@@ -7,7 +7,7 @@
 
 // Students:  Add code to this file, Actor.h, StudentWorld.h, and StudentWorld.cpp
 
-Actor::Actor(int imgID, int x, int y, StudentWorld* sw):GraphObject(imgID, x, y)
+Actor::Actor(int imgID, double x, double y, StudentWorld* sw, int dir, int depth):GraphObject(imgID, x, y)
 {
 
     swptr = sw;
@@ -22,7 +22,23 @@ void Actor::doSomething()
     
 }
 
+bool Actor::blocksMovement() const
+{
+    return false;
+}
+
+bool Agent::blocksMovement() const
+{
+    return true;
+}
+
+bool Wall::blocksMovement() const
+{
+    return true;
+}
+
 StudentWorld* Actor:: getWorld() const
+
 {
     return swptr;
 }
@@ -32,7 +48,45 @@ bool Actor::checkActorMove(double x, double y, Actor* self)
     return(swptr->blockCheck(x, y, this));
 }
 
-Penelope::Penelope(int imgID, int x, int y, StudentWorld* sw): Actor(imgID, x, y, sw)
+ActivatingObject::ActivatingObject(int imageID, double x, double y, StudentWorld* sw, int direction, int depth): Actor (imageID, x, y, sw, direction, depth)
+{
+    
+}
+
+Exit::Exit(double x, double y, StudentWorld* sw): ActivatingObject(10, x, y, sw, right, 1)
+{
+
+}
+
+Agent::Agent(int imageID, double x, double y, StudentWorld* sw, int dir): Actor (imageID, x, y, sw, right, 0)
+{
+    
+}
+
+Citizen::Citizen(double x, double y, StudentWorld* sw):Human(2, x, y, sw)
+{
+    m_alive = true;
+}
+
+void Citizen::doSomething()
+{
+    
+}
+
+void Citizen::dieByFallOrBurnIfAppropriate()
+{
+    cout<<"here??";
+    getWorld()->recordCitizenGone(this);
+}
+
+Human::Human(int imageID, double x, double y, StudentWorld* sw): Agent(imageID, x, y, sw, right)
+{
+    m_infectedStatus = false;
+    m_infectionCount = 0;
+}
+
+
+Penelope::Penelope(double x, double y, StudentWorld* sw): Human(0, x, y, sw)
 {
     //setDirection(right);
     
@@ -56,7 +110,6 @@ void Penelope::doSomething()
         {
             case KEY_PRESS_UP:
                 setDirection(up);
-                cout<<"UP";
                 if(checkActorMove(getX(), getY()+4, this))
                     moveTo(getX(), getY()+4);
                 return;
@@ -86,9 +139,19 @@ void Penelope::doSomething()
     
 }
 
-Wall::Wall(int imgID, int x, int y, StudentWorld* sw): Actor(imgID, x, y, sw)
+Wall::Wall(int imgID, int x, int y, StudentWorld* sw): Actor(imgID, x, y, sw, right, 0)
 {
     
+}
+
+void Exit::doSomething()
+{
+    StudentWorld* sw = getWorld(); //Creates a new pointer to the student world
+    if (sw->touching(this, sw->getPenelopePointer())) //Checks if the wall and penelope are touching
+    {
+        if (sw->noMoreCitizens())
+            sw->SetLevelCompleted(true);
+    }
 }
 
 Wall::~Wall()
