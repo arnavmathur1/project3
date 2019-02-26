@@ -20,7 +20,7 @@ public:
     
     // Does this object block agent movement?
     virtual bool blocksMovement() const;
-    bool touching(Actor* a1, Actor* a2);
+    //bool touching(Actor* a1, Actor* a2);
 
     
     StudentWorld* getWorld() const;
@@ -118,23 +118,35 @@ private:
 class Zombie : public Agent
 {
 public:
-    Zombie(StudentWorld* w,  double x, double y);
+    Zombie(double x, double y, StudentWorld* sw);
+     bool isParalysed();
+     void setParalysed(bool paralysis_state);
+    
+     bool isAlive();
+     void setAlive(bool alive_state);
+    
+    int movementsLeft();
+    void newMovement(int moveNum);
+private:
+    bool m_paralysed;
+    bool m_alive;
+    int m_movementPlan;
 };
 
 class DumbZombie : public Zombie
 {
 public:
-    DumbZombie(StudentWorld* w,  double x, double y);
+    DumbZombie(double x, double y, StudentWorld* sw);
     virtual void doSomething();
-    virtual void dieByFallOrBurnIfAppropriate();
+    //virtual void dieByFallOrBurnIfAppropriate();
 };
 
 class SmartZombie : public Zombie
 {
 public:
-    SmartZombie(StudentWorld* w,  double x, double y);
-    virtual void doSomething();
-    virtual void dieByFallOrBurnIfAppropriate();
+    SmartZombie(double x, double y, StudentWorld* sw);
+    //virtual void doSomething();
+    //virtual void dieByFallOrBurnIfAppropriate();
 };
 
 #endif // ACTOR_H_

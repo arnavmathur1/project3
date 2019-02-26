@@ -36,7 +36,7 @@ public:
     void recordLevelFinishedIfAllCitizensGone();
     
     bool noMoreCitizens();
-    
+    bool touching(Actor *a1, Actor *a2);
     
     Actor* getPenelopePointer();
     

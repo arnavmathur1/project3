@@ -37,6 +37,23 @@ int StudentWorld::init()
     return GWSTATUS_CONTINUE_GAME;
 }
 
+bool StudentWorld::touching(Actor *a1, Actor *a2)
+{
+    
+    
+    double dx = a1->getX() - a2->getX();
+    double dy = a1->getY() - a2->getY();
+    
+    double distance = sqrt((dx*dx) + (dy*dy));
+    //cout<<distance<<" ";
+    if (distance <= 10)
+    {
+        return true;
+    }
+    
+    return false;
+}
+
 int StudentWorld::move()
 {
     // This code is here merely to allow the game to build, run, and terminate after you hit enter.
@@ -133,6 +150,16 @@ void StudentWorld::loadLevel()
                     actorVector.push_back(actorptr);
                     m_nCitizens++;
                     cout<<m_nCitizens<<endl;
+                    break;
+                    
+                case Level::smart_zombie:
+                    actorptr = new SmartZombie(true_x, true_y, this);
+                    actorVector.push_back(actorptr);
+                    break;
+                    
+                case Level::dumb_zombie:
+                    actorptr = new DumbZombie(true_x, true_y, this);
+                    actorVector.push_back(actorptr);
                     break;
                     
                 case Level::empty:

@@ -9,7 +9,7 @@
 
 Actor::Actor(int imgID, double x, double y, StudentWorld* sw, int dir, int depth):GraphObject(imgID, x, y)
 {
-
+    
     swptr = sw;
 }
 Actor::~Actor()
@@ -55,7 +55,7 @@ ActivatingObject::ActivatingObject(int imageID, double x, double y, StudentWorld
 
 Exit::Exit(double x, double y, StudentWorld* sw): ActivatingObject(10, x, y, sw, right, 1)
 {
-
+    
 }
 
 Agent::Agent(int imageID, double x, double y, StudentWorld* sw, int dir): Actor (imageID, x, y, sw, right, 0)
@@ -73,7 +73,7 @@ void Citizen::doSomething()
 {
     if (!m_alive)
         return; //When a citizen is dead this immediately returns. no modifications are made
-
+    
     if (isParalysed())
     {
         m_paralysed = false;
@@ -94,10 +94,10 @@ void Citizen::doSomething()
         if (getX() == getWorld()->getPenelopePointer()->getX() && dy<0)
         {
             /*
-            setDirection(up);
-            if(checkActorMove(getX(), getY()+2, this)) JUNK CODE IGNORE PLS
-                moveTo(getX(), getY()+2);
-            */
+             setDirection(up);
+             if(checkActorMove(getX(), getY()+2, this)) JUNK CODE IGNORE PLS
+             moveTo(getX(), getY()+2);
+             */
             moveHelper(getX(), getY()+2, up, this);
             return;
         }
@@ -105,35 +105,36 @@ void Citizen::doSomething()
         {
             moveHelper(getX(), getY()-2, down, this);
             /*setDirection(down);
-
-            if(checkActorMove(getX(), getY()-2, this))
-                moveTo(getX(), getY()-2);*/
+             
+             if(checkActorMove(getX(), getY()-2, this))
+             moveTo(getX(), getY()-2);*/
+            return;
         }
         
-
+        
         else if (getY() == getWorld()->getPenelopePointer()->getY() && dx<0)
         {
             /*
-            setDirection(right);
-            if(checkActorMove(getX()+2, getY(), this))
-                moveTo(getX()+2, getY());*/
-             moveHelper(getX()+2, getY(), right, this);
+             setDirection(right);
+             if(checkActorMove(getX()+2, getY(), this))
+             moveTo(getX()+2, getY());*/
+            moveHelper(getX()+2, getY(), right, this);
             return;
         }
         else if (getY() == getWorld()->getPenelopePointer()->getY() && dx>0)
         {
             /*
-            setDirection(left);
-            if(checkActorMove(getX()-2, getY(), this))
-                moveTo(getX()-2, getY());*/
-             moveHelper(getX()-2, getY(), left, this);
+             setDirection(left);
+             if(checkActorMove(getX()-2, getY(), this))
+             moveTo(getX()-2, getY());*/
+            moveHelper(getX()-2, getY(), left, this);
             return;
         }
         
         else if (dy<0 && dx<0) //We now check each direction sequentially for the most appropriate citizen move based on its and Penelope's current position
         {
             int result = randInt(0, 1);
-           
+            
             if (result == 0) //Checking if up is valid
             {
                 if(checkActorMove(getX(), getY()+2, this))
@@ -255,7 +256,7 @@ void Penelope::doSomething()
     
     if (getWorld()->getKey(keyPress)) //Implements algorithm from the "hint" section in footnote 4
     {
-     
+        
         
         switch (keyPress)
         {
@@ -265,7 +266,7 @@ void Penelope::doSomething()
                 return;
             case KEY_PRESS_DOWN:
                 moveHelper(getX(), getY()-4, down, this);
-               
+                
                 return;
             case KEY_PRESS_LEFT:
                 moveHelper(getX()-4, getY(), left, this);
@@ -289,7 +290,7 @@ Wall::Wall(int imgID, int x, int y, StudentWorld* sw): Actor(imgID, x, y, sw, ri
 void Exit::doSomething()
 {
     StudentWorld* sw = getWorld(); //Creates a new pointer to the student world
-    if (touching(this, sw->getPenelopePointer())) //Checks if the wall and penelope are touching
+    if (getWorld()->touching(this, sw->getPenelopePointer())) //Checks if the wall and penelope are touching
     {
         if (sw->noMoreCitizens()) //When we are out of citizens (i.e. all safe/dead) the level has been completed and the exit functionality can be activated
             sw->SetLevelCompleted(true);
@@ -311,23 +312,143 @@ Wall::~Wall()
     
 }
 
-bool Actor::touching(Actor *a1, Actor *a2)
+
+
+
+
+
+//Zombies
+Zombie::Zombie(double x, double y, StudentWorld* sw): Agent(1, x, y, sw, right)
+{
+    m_alive = true;
+    m_paralysed = false;
+    m_movementPlan = 0;
+}
+
+SmartZombie::SmartZombie(double x, double y, StudentWorld* sw):Zombie(x,y,sw)
+{}
+
+DumbZombie::DumbZombie(double x, double y, StudentWorld* sw):Zombie(x,y,sw)
 {
     
     
-    double dx = a1->getX() - a2->getX();
-    double dy = a1->getY() - a2->getY();
-    
-    double distance = sqrt((dx*dx) + (dy*dy));
-    //cout<<distance<<" ";
-    if (distance <= 10)
-    {
-        return true;
-    }
-    
-    return false;
 }
 
+void DumbZombie::doSomething()
+{
+    if (!isAlive())
+        return; //When a citizen is dead this immediately returns. no modifications are made
+    
+    if (isParalysed())
+    {
+        setParalysed(false);
+        return;
+    }
+    
+    setParalysed(true); //Paralyses citizens every alternate tick in connjunction with the if statement above
+    
+    if (movementsLeft() == 0)
+    {
+        newMovement(randInt(3, 10));
+       
+        int dir = randInt(0, 3);
+        switch (dir)
+        {
+            case 0:
+                setDirection(right);
+                break;
+            case 1:
+                setDirection(left);
+                break;
+            case 3:
+                setDirection(down);
+                break;
+            case 2:
+                setDirection(up);
+                break;
+            default:
+                break;
+        }
+    }
+    if (movementsLeft()>0)
+    {
+        switch (getDirection())
+        {
+            case right:
+                if (checkActorMove(getX()+1, getY(), this))
+                {
+                    moveHelper(getX()+1, getY(), right, this);
+                }
+                else
+                {
+                    newMovement(0);
+                }
+                break;
+            case left:
+                if (checkActorMove(getX()-1, getY(), this))
+                {
+                    moveHelper(getX()-1, getY(), left, this);
+                }
+                else
+                {
+                    newMovement(0);
+                }
+                break;
+            case up:
+                if (checkActorMove(getX(), getY()+1, this))
+                {
+                    moveHelper(getX(), getY()+1, up, this);
+                }
+                else
+                {
+                    newMovement(0);
+                }
+                break;
+            case down:
+                if (checkActorMove(getX(), getY()-1, this))
+                {
+                    moveHelper(getX(), getY()-1, down, this);
+                }
+                else
+                {
+                    newMovement(0);
+                }
+                break;
+            default:
+                break;
+        }
+        if (movementsLeft()!=0)
+            newMovement(movementsLeft()-1);
+    }
+    
+}
 
+bool Zombie::isParalysed()
+{
+    return m_paralysed;
+}
 
+void Zombie::setParalysed(bool paralysis_state)
+{
+    m_paralysed = paralysis_state;
+}
 
+bool Zombie::isAlive()
+{
+    return m_alive;
+}
+
+void Zombie::setAlive(bool alive_state)
+{
+    m_alive = alive_state;
+}
+
+int Zombie::movementsLeft()
+{
+    return m_movementPlan;
+}
+
+void Zombie::newMovement(int moveNum)
+{
+    m_movementPlan = moveNum;
+}
