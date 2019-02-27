@@ -5,15 +5,24 @@
 #include "GameConstants.h"
 #include "Level.h"
 #include "Actor.h"
-
+#include <sstream>
 #include <string>
 using namespace std;
 
+/*
+int level = 0;
+ostringstream oss;  // oss is a name of our choosing.
+oss.setf(ios::fixed);
 
 
+string s = oss.str();*/
+
+int level = 0;
 
 GameWorld* createStudentWorld(string assetPath)
 {
+    
+
     return new StudentWorld(assetPath);
 }
 
@@ -34,6 +43,7 @@ int StudentWorld::init()
     
     loadLevel();
     m_levelCompleted = false;
+    m_levelFailed = false;
     return GWSTATUS_CONTINUE_GAME;
 }
 
@@ -61,19 +71,27 @@ int StudentWorld::move()
     
     
     
-    if(getLives() == 0)
+    /*if(getLives() == 0)
+        return GWSTATUS_PLAYER_DIED;*/
+    
+    if(m_levelFailed)
+    {
+        decLives();
         return GWSTATUS_PLAYER_DIED;
+    }
+    
     
     for (int a = 0; a<actorVector.size(); a++)
     {
-        actorVector[a]->doSomething();
+        actorVector[a]->doSomething(); //Calls on each actor to do something
+        activateOnAppropriateActors(actorVector[a]); //Activates any actors that may need activating
         
-        
-        if (actorVector[a]->canUseExit())
+     
+        if (actorVector[a]->canUseExitAndGetInfected())
         {
-            if (actorVector[a] == penelopeptr)
+            if (actorVector[a] == penelopeptr) //If the actor can use the exit and is penelope, there are additional requirements that must be met before this can happen compared to other humans (i.e. there are no more citizens left in the level)
             {
-                if (m_levelCompleted)
+                if (m_levelCompleted) //If the levelCompleted boolean has been flagged true, Penelope has met the requirements to exit and is at the exit, so the level has been completed
                 {
                     cout<<m_nCitizens;
                     cout<<"WE DONE";
@@ -84,6 +102,19 @@ int StudentWorld::move()
             
             
         }
+        if (!actorVector[a]->getInPlay())
+        {
+            delete actorVector[a];
+            for (int i = 0; i<actorVector.size(); i++)
+            {
+                if (actorVector[i] == actorVector[a])
+                {
+                    actorVector.erase(actorVector.begin() + i);
+                    break;
+                }
+            }
+        }
+        
         
     }
     
@@ -113,6 +144,15 @@ void StudentWorld::loadLevel()
 {
     m_nCitizens = 0;
     
+   
+    //... suppose some code here gives amt the value 123.4
+    ostringstream oss;  // oss is a name of our choosing.
+    oss.setf(ios::fixed);
+    oss.precision(2);
+    oss << "level" << level<<".txt";  // puts "$123.40" in oss's internal storage
+    string s = oss.str();  // s gets "$123.40"
+    
+    
     Level lev(assetPath());
     string levelFile = "level02.txt";
     lev.loadLevel(levelFile); //loading the file
@@ -136,7 +176,7 @@ void StudentWorld::loadLevel()
                     break;
                     
                 case Level::wall:
-                    actorptr = new Wall(11, true_x, true_y, this);
+                    actorptr = new Wall(true_x, true_y, this);
                     actorVector.push_back(actorptr); //Adds each new actor to the vector
                     break;
                     
@@ -219,7 +259,27 @@ bool StudentWorld::blockCheck(double dest_x, double dest_y, Actor* actorPassed) 
     return true;
 }
 
-void StudentWorld::recordCitizenGone(Citizen* c)
+void StudentWorld::recordCitizenInfected(Actor* c)
+{
+    double c_x = c->getX();
+    double c_y = c->getY();
+    
+    delete c;
+    
+    for (int i = 0; i<actorVector.size(); i++)
+    {
+        if (actorVector[i] == c)
+        {
+            actorVector.erase(actorVector.begin() + i);
+            m_nCitizens--;
+        }
+    }
+    
+    Actor* actorptr = new DumbZombie(c_x, c_y, this);
+    actorVector.push_back(actorptr);
+}
+
+void StudentWorld::recordCitizenExit(Actor* c)
 {
     delete c;
     
@@ -228,6 +288,7 @@ void StudentWorld::recordCitizenGone(Citizen* c)
         if (actorVector[i] == c)
         {
             actorVector.erase(actorVector.begin() + i);
+            m_nCitizens--;
             return;
         }
     }
@@ -238,7 +299,16 @@ Actor* StudentWorld :: getPenelopePointer()
     return penelopeptr;
 }
 
-
+void StudentWorld::activateOnAppropriateActors(Actor* someActor)
+{
+    for (int i = 0; i<actorVector.size(); i++)
+    {
+        if (touching(actorVector[i], someActor))
+        {
+            actorVector[i]->activateIfAppropriate(someActor);
+        }
+    }
+}
 
 bool StudentWorld::noMoreCitizens()
 {
@@ -251,4 +321,36 @@ bool StudentWorld::noMoreCitizens()
 void StudentWorld::SetLevelCompleted(bool levelStatus)
 {
     m_levelCompleted = true;
+}
+
+bool StudentWorld::isZombieVomitTriggerAt(double x, double y) const
+{
+    
+    for (int i = 0; i<actorVector.size(); i++)
+    {
+    
+        double aX = actorVector[i]->getX();
+        double aY = actorVector[i]->getY();
+    
+        if (x == aX && y == aY)
+        {
+            if (actorVector[i]->canBeVomitedOn())
+                return true;
+        }
+    
+    }
+    
+    return false;
+    
+}
+
+void StudentWorld::newVomit(double x, double y, int dir)
+{
+    Actor* actorptr = new Vomit(x, y, this, dir);
+    actorVector.push_back(actorptr); //Adds each new actor to the vector
+}
+
+void StudentWorld::levelFailed(bool status)
+{
+    m_levelFailed = status;
 }

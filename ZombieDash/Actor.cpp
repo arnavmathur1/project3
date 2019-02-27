@@ -11,10 +11,26 @@ Actor::Actor(int imgID, double x, double y, StudentWorld* sw, int dir, int depth
 {
     
     swptr = sw;
+    m_inPlay = true;
 }
 Actor::~Actor()
 {
     
+}
+
+bool Actor::getInPlay()
+{
+    return m_inPlay;
+}
+
+void Actor::setInPlay(bool status)
+{
+    m_inPlay = status;
+}
+
+bool Actor::canBeVomitedOn() const
+{
+    return false;
 }
 
 void Actor::doSomething()
@@ -35,6 +51,10 @@ bool Agent::blocksMovement() const
 bool Wall::blocksMovement() const
 {
     return true;
+}
+
+void Wall::doSomething()
+{
 }
 
 StudentWorld* Actor:: getWorld() const
@@ -69,10 +89,24 @@ Citizen::Citizen(double x, double y, StudentWorld* sw):Human(2, x, y, sw)
     m_paralysed = false;
 }
 
+
 void Citizen::doSomething()
 {
     if (!m_alive)
         return; //When a citizen is dead this immediately returns. no modifications are made
+    
+    
+    if(getInfectionDuration() >= 500)
+    {
+        getWorld()->recordCitizenInfected(this);
+        getWorld()->playSound(SOUND_CITIZEN_DIE);
+        return;
+    }
+    
+    if(infected())
+    {
+        changeInfection(getInfectionDuration() + 1);
+    }
     
     if (isParalysed())
     {
@@ -183,7 +217,7 @@ void Citizen::doSomething()
             }
             else if (checkActorMove(getX()-2, getY(), this))
             {
-                moveHelper(getX()+2, getY(), left, this);
+                moveHelper(getX()-2, getY(), left, this);
             }
             return;
             
@@ -209,6 +243,13 @@ void Citizen::doSomething()
         
         return;
     }
+    
+    
+}
+
+void Human::changeInfection(int newinf)
+{
+    m_infectionCount = newinf;
 }
 
 void Agent::moveHelper(double x, double y,int dir, Actor *ap)
@@ -218,10 +259,18 @@ void Agent::moveHelper(double x, double y,int dir, Actor *ap)
         moveTo(x, y);
 }
 
+void Actor::infect()
+{
+}
+
+void Human::infect()
+{
+    m_infectedStatus = true;
+}
+
 void Citizen::dieByFallOrBurnIfAppropriate()
 {
-    cout<<"here??";
-    getWorld()->recordCitizenGone(this);
+    //getWorld()->recordCitizenDied(this);
 }
 
 bool Citizen::isParalysed()
@@ -237,11 +286,19 @@ Human::Human(int imageID, double x, double y, StudentWorld* sw): Agent(imageID, 
     m_infectionCount = 0;
 }
 
+bool Human::infected()
+{
+    return m_infectedStatus;
+}
+
+bool Human::canBeVomitedOn() const
+{
+    return true;
+}
 
 Penelope::Penelope(double x, double y, StudentWorld* sw): Human(0, x, y, sw)
 {
     //setDirection(right);
-    
     
 }
 
@@ -253,6 +310,18 @@ Penelope::~Penelope()
 void Penelope::doSomething()
 {
     int keyPress = -1;
+    
+    if(getInfectionDuration() >= 500)
+    {
+        setInPlay(false);
+        getWorld()->levelFailed(true);
+        getWorld()->playSound(SOUND_PLAYER_DIE);
+    }
+    
+    if(infected())
+    {
+        changeInfection(getInfectionDuration() + 1);
+    }
     
     if (getWorld()->getKey(keyPress)) //Implements algorithm from the "hint" section in footnote 4
     {
@@ -282,29 +351,29 @@ void Penelope::doSomething()
     
 }
 
-Wall::Wall(int imgID, int x, int y, StudentWorld* sw): Actor(imgID, x, y, sw, right, 0)
+Wall::Wall(double x, double y, StudentWorld* sw): Actor(IID_WALL, x, y, sw, right, 0)
 {
     
 }
 
 void Exit::doSomething()
 {
-    StudentWorld* sw = getWorld(); //Creates a new pointer to the student world
-    if (getWorld()->touching(this, sw->getPenelopePointer())) //Checks if the wall and penelope are touching
-    {
-        if (sw->noMoreCitizens()) //When we are out of citizens (i.e. all safe/dead) the level has been completed and the exit functionality can be activated
-            sw->SetLevelCompleted(true);
-    }
+    
 }
 
-bool Actor::canUseExit()
+bool Actor::canUseExitAndGetInfected()
 {
     return false;
 }
 
-bool Human::canUseExit()
+bool Human::canUseExitAndGetInfected()
 {
     return true;
+}
+
+int Human::getInfectionDuration() const
+{
+    return m_infectionCount;
 }
 
 Wall::~Wall()
@@ -312,9 +381,32 @@ Wall::~Wall()
     
 }
 
+void Actor::activateIfAppropriate(Actor *a)
+{
+    
+}
 
-
-
+void Exit::activateIfAppropriate(Actor *a)
+{
+    //cout<<"Its being called";
+    StudentWorld* sw = getWorld(); //Creates a new pointer to the student world
+    /*if (getWorld()->touching(this, sw->getPenelopePointer())) //Checks if the wall and penelope are touching
+     {
+     if (sw->noMoreCitizens()) //When we are out of citizens (i.e. all safe/dead) the level has been completed and the exit functionality can be activated
+     sw->SetLevelCompleted(true);
+     }*/
+    if (a == getWorld()->getPenelopePointer())
+    {
+        if (sw->noMoreCitizens()) //When we are out of citizens (i.e. all safe/dead) the level has been completed and the exit functionality can be activated
+            sw->SetLevelCompleted(true);
+    }
+    else if (a->canUseExitAndGetInfected())
+    {
+        sw->recordCitizenExit(a);
+        cout<<"YEEEEEEET";
+    }
+    
+}
 
 
 //Zombies
@@ -325,16 +417,99 @@ Zombie::Zombie(double x, double y, StudentWorld* sw): Agent(1, x, y, sw, right)
     m_movementPlan = 0;
 }
 
+/*
+ void Zombie::commonActions()
+ {
+ if (!isAlive())
+ return; //When a citizen is dead this immediately returns. no modifications are made
+ 
+ if (isParalysed())
+ {
+ setParalysed(false);
+ return;
+ }
+ 
+ setParalysed(true); //Paralyses citizens every alternate tick in connjunction with the if statement above
+ 
+ if (movementsLeft() == 0)
+ {
+ newMovement(randInt(3, 10));
+ 
+ int dir = randInt(0, 3);
+ switch (dir)
+ {
+ case 0:
+ setDirection(right);
+ break;
+ case 1:
+ setDirection(left);
+ break;
+ case 3:
+ setDirection(down);
+ break;
+ case 2:
+ setDirection(up);
+ break;
+ default:
+ break;
+ }
+ }
+ if (movementsLeft()>0)
+ {
+ switch (getDirection())
+ {
+ case right:
+ if (checkActorMove(getX()+1, getY(), this))
+ {
+ moveHelper(getX()+1, getY(), right, this);
+ }
+ else
+ {
+ newMovement(0);
+ }
+ break;
+ case left:
+ if (checkActorMove(getX()-1, getY(), this))
+ {
+ moveHelper(getX()-1, getY(), left, this);
+ }
+ else
+ {
+ newMovement(0);
+ }
+ break;
+ case up:
+ if (checkActorMove(getX(), getY()+1, this))
+ {
+ moveHelper(getX(), getY()+1, up, this);
+ }
+ else
+ {
+ newMovement(0);
+ }
+ break;
+ case down:
+ if (checkActorMove(getX(), getY()-1, this))
+ {
+ moveHelper(getX(), getY()-1, down, this);
+ }
+ else
+ {
+ newMovement(0);
+ }
+ break;
+ default:
+ break;
+ }
+ if (movementsLeft()!=0)
+ newMovement(movementsLeft()-1);
+ }
+ }*/
+
 SmartZombie::SmartZombie(double x, double y, StudentWorld* sw):Zombie(x,y,sw)
 {}
 
-DumbZombie::DumbZombie(double x, double y, StudentWorld* sw):Zombie(x,y,sw)
-{
-    
-    
-}
-
-void DumbZombie::doSomething()
+void SmartZombie::doSomething()
 {
     if (!isAlive())
         return; //When a citizen is dead this immediately returns. no modifications are made
@@ -350,7 +525,7 @@ void DumbZombie::doSomething()
     if (movementsLeft() == 0)
     {
         newMovement(randInt(3, 10));
-       
+        
         int dir = randInt(0, 3);
         switch (dir)
         {
@@ -423,6 +598,99 @@ void DumbZombie::doSomething()
     
 }
 
+DumbZombie::DumbZombie(double x, double y, StudentWorld* sw):Zombie(x,y,sw)
+{}
+
+void DumbZombie::doSomething()
+{
+    if(tryVomit())
+        return;
+    
+    if (!isAlive())
+        return; //When a citizen is dead this immediately returns. no modifications are made
+    
+    if (isParalysed())
+    {
+        setParalysed(false);
+        return;
+    }
+    
+    setParalysed(true); //Paralyses citizens every alternate tick in connjunction with the if statement above
+    
+    if (movementsLeft() == 0)
+    {
+        newMovement(randInt(3, 10));
+        
+        int dir = randInt(0, 3);
+        switch (dir)
+        {
+            case 0:
+                setDirection(right);
+                break;
+            case 1:
+                setDirection(left);
+                break;
+            case 3:
+                setDirection(down);
+                break;
+            case 2:
+                setDirection(up);
+                break;
+            default:
+                break;
+        }
+    }
+    if (movementsLeft()>0)
+    {
+        switch (getDirection())
+        {
+            case right:
+                if (checkActorMove(getX()+1, getY(), this))
+                {
+                    moveHelper(getX()+1, getY(), right, this);
+                }
+                else
+                {
+                    newMovement(0);
+                }
+                break;
+            case left:
+                if (checkActorMove(getX()-1, getY(), this))
+                {
+                    moveHelper(getX()-1, getY(), left, this);
+                }
+                else
+                {
+                    newMovement(0);
+                }
+                break;
+            case up:
+                if (checkActorMove(getX(), getY()+1, this))
+                {
+                    moveHelper(getX(), getY()+1, up, this);
+                }
+                else
+                {
+                    newMovement(0);
+                }
+                break;
+            case down:
+                if (checkActorMove(getX(), getY()-1, this))
+                {
+                    moveHelper(getX(), getY()-1, down, this);
+                }
+                else
+                {
+                    newMovement(0);
+                }
+                break;
+            default:
+                break;
+        }
+        if (movementsLeft()!=0)
+            newMovement(movementsLeft()-1);
+    }}
+
 bool Zombie::isParalysed()
 {
     return m_paralysed;
@@ -451,4 +719,76 @@ int Zombie::movementsLeft()
 void Zombie::newMovement(int moveNum)
 {
     m_movementPlan = moveNum;
+}
+
+bool Zombie::vomitProbability() const
+{
+    int random = randInt(0, 2);
+    
+    if (random == 0)
+        return true;
+    return false;
+}
+
+bool Zombie::tryVomit()
+{
+    switch (getDirection())
+    {
+        case right:
+            if (getWorld()->isZombieVomitTriggerAt(getX() + SPRITE_WIDTH, getY()))
+            {
+                getWorld()->newVomit(getX() + SPRITE_WIDTH, getY(), right);
+                return true;
+            }
+        case left:
+            if (getWorld()->isZombieVomitTriggerAt(getX() - SPRITE_WIDTH, getY()))
+            {
+                getWorld()->newVomit(getX() - SPRITE_WIDTH, getY(), left);
+                return true;
+            }
+        case up:
+            if (getWorld()->isZombieVomitTriggerAt(getX(), getY() + SPRITE_WIDTH))
+            {
+                
+                getWorld()->newVomit(getX(), getY() + SPRITE_WIDTH, up);
+                return true;
+            }
+        case down:
+            if (getWorld()->isZombieVomitTriggerAt(getX(), getY() - SPRITE_WIDTH))
+            {
+                getWorld()->newVomit(getX(), getY() - SPRITE_WIDTH, down);
+                return true;
+            }
+        default:
+            break;
+    }
+    return false;
+}
+
+//VOMIT
+
+Vomit::Vomit(double x, double y, StudentWorld* sw, int dir):ActivatingObject(IID_VOMIT, x, y, sw, dir, 0)
+{
+    m_ticksLasted = 0;
+}
+
+void Vomit::doSomething()
+{
+    if (m_ticksLasted == 2)
+    {
+        setInPlay(false);
+    }
+    
+    
+    m_ticksLasted++;
+}
+
+
+
+void Vomit::activateIfAppropriate(Actor *a)
+{
+    if (a->canUseExitAndGetInfected())
+    {
+        a->infect();
+    }
 }
