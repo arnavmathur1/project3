@@ -358,7 +358,11 @@ Wall::Wall(double x, double y, StudentWorld* sw): Actor(IID_WALL, x, y, sw, righ
 
 void Exit::doSomething()
 {
-    
+    /*
+     studentworld is there something on top of me
+     
+     if yes, tell it that it is on top of an exit
+     */
 }
 
 bool Actor::canUseExitAndGetInfected()

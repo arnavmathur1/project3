@@ -5,19 +5,14 @@
 #include "GameConstants.h"
 #include "Level.h"
 #include "Actor.h"
+#include <iostream>
+#include <iomanip>
 #include <sstream>
 #include <string>
 using namespace std;
 
-/*
-int level = 0;
-ostringstream oss;  // oss is a name of our choosing.
-oss.setf(ios::fixed);
 
 
-string s = oss.str();*/
-
-int level = 0;
 
 GameWorld* createStudentWorld(string assetPath)
 {
@@ -69,10 +64,17 @@ int StudentWorld::move()
     // This code is here merely to allow the game to build, run, and terminate after you hit enter.
     // Notice that the return value GWSTATUS_PLAYER_DIED will cause our framework to end the current level.
     
-    
-    
-    /*if(getLives() == 0)
-        return GWSTATUS_PLAYER_DIED;*/
+   /*
+    ostringstream oss;
+    int k=123;
+    //... suppose some code here gives k the value 123
+    oss << setw(5) << k << endl;
+    oss.fill('*');
+    oss << setw(5) << k << endl;
+    oss << setw(4) << k << endl;
+    oss.fill('0');
+    oss << setw(5) << k << endl;
+    string s = oss.str();*/
     
     if(m_levelFailed)
     {
@@ -143,14 +145,7 @@ void StudentWorld::cleanUp()
 void StudentWorld::loadLevel()
 {
     m_nCitizens = 0;
-    
-   
-    //... suppose some code here gives amt the value 123.4
-    ostringstream oss;  // oss is a name of our choosing.
-    oss.setf(ios::fixed);
-    oss.precision(2);
-    oss << "level" << level<<".txt";  // puts "$123.40" in oss's internal storage
-    string s = oss.str();  // s gets "$123.40"
+
     
     
     Level lev(assetPath());
