@@ -21,7 +21,7 @@ public:
     virtual void changeFlameCharges(int newCharges); //Only applicable for Penelope, for all other actors, nothing happens (so it is redefined more usefully in Penelope's class)
     
     virtual bool blocksMovement() const; // Does this object block agent movement?
-    //virtual bool blocksFlame() const;
+    virtual bool blocksFlame() const;
     virtual void dieByFallOrBurnIfAppropriate(); //Kills this actor where it is possible (i.e. agents)
 
     virtual bool canBeVomitedOn() const;
@@ -64,7 +64,7 @@ public:
     bool allowExit();
     virtual void doSomething();
     virtual void activateIfAppropriate(Actor* a);
-    //virtual bool blocksFlame() const;
+    virtual bool blocksFlame() const;
     
 };
 
@@ -103,6 +103,7 @@ class Citizen : public Human
 public:
     Citizen(double x, double y, StudentWorld* sw);
     virtual void doSomething();
+    virtual void infect();
     virtual void dieByFallOrBurnIfAppropriate();
     bool isParalysed();
     
@@ -119,6 +120,7 @@ public:
     virtual void doSomething();
     virtual ~Wall();
     virtual bool blocksMovement() const;
+    virtual bool blocksFlame() const;
     
     
 };
@@ -151,8 +153,17 @@ class GasCanGoodie: public Goodie
 {
 public:
     GasCanGoodie(double x, double y, StudentWorld* sw);
-    void doSomething();
+    virtual void doSomething();
     virtual void activateIfAppropriate(Actor* a);
+};
+
+class LandmineGoodie : public Goodie
+{
+public:
+    LandmineGoodie(double x, double y, StudentWorld* sw);
+    virtual void doSomething();
+    virtual void activateIfAppropriate(Actor* a);
+    
 };
 
 class Zombie : public Agent
@@ -202,8 +213,18 @@ class Flame : public ActivatingObject
 {
 public:
     Flame(double x, double y, StudentWorld* sw, int dir);
-    void doSomething();
+    virtual void doSomething();
     virtual void activateIfAppropriate(Actor* a);
 };
+
+class Pit: public ActivatingObject
+{
+public:
+    Pit(double x, double y, StudentWorld* sw);
+    virtual void doSomething();
+    virtual void activateIfAppropriate(Actor* a);
+};
+
+
 
 #endif // ACTOR_H_

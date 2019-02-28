@@ -26,6 +26,7 @@ public:
     void SetLevelCompleted (bool levelStatus); //Allows the level to be completed
     
     bool blockCheck(double dest_x,double dest_y,  Actor* thisActor) const; //Checks if the propsed move has an actor that would block it
+    bool flameCheck(double dest_x,double dest_y,  Actor* thisActor) const; //Checks if the propsed move has an actor that would block it
 
     void newVomit(double x, double y, int dir);
     

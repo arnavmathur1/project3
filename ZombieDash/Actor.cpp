@@ -41,6 +41,21 @@ void Actor::doSomething()
     
 }
 
+bool Actor::blocksFlame() const
+{
+    return false;
+}
+
+bool Exit::blocksFlame() const
+{
+    return true;
+}
+
+bool Wall::blocksFlame() const
+{
+    return true;
+}
+
 bool Actor::blocksMovement() const
 {
     return false;
@@ -273,6 +288,12 @@ void Human::infect()
     m_infectedStatus = true;
 }
 
+void Citizen::infect()
+{
+    Human::infect();
+    getWorld()->playSound(SOUND_CITIZEN_INFECTED);
+}
+
 void Citizen::dieByFallOrBurnIfAppropriate()
 {
     getWorld()->recordCitizenInfectedOrDied(this, 1);
@@ -372,13 +393,18 @@ void Penelope::fireFlamethrower(int dir)
 {
     if (FlameCharges()>0)
     {
+        getWorld()->playSound(SOUND_PLAYER_FIRE);
         switch (dir)
         {
             case left:
                 for (int i = 1; i<=3; i++)
                 {
-                    getWorld()->flamethrowerActivated(getX() - (i *SPRITE_WIDTH), getY(), left);
-                    
+                    if (getWorld()->flameCheck(getX() - (i *SPRITE_WIDTH), getY(), this))
+                    {
+                        getWorld()->flamethrowerActivated(getX() - (i *SPRITE_WIDTH), getY(), left);
+                    }
+                    else
+                        break;
                 }
                 changeFlameCharges(FlameCharges()-1);
                 break;
@@ -386,24 +412,36 @@ void Penelope::fireFlamethrower(int dir)
             case right:
                 for (int i = 1; i<=3; i++)
                 {
-                    getWorld()->flamethrowerActivated(getX() + (i *SPRITE_WIDTH), getY(), right);
-                    
+                    if (getWorld()->flameCheck(getX() + (i *SPRITE_WIDTH), getY(), this))
+                    {
+                        getWorld()->flamethrowerActivated(getX() + (i *SPRITE_WIDTH), getY(), right);
+                    }
+                    else
+                        break;
                 }
                 changeFlameCharges(FlameCharges()-1);
                 break;
             case up:
                 for (int i = 1; i<=3; i++)
                 {
-                    getWorld()->flamethrowerActivated(getX() , getY() + (i *SPRITE_WIDTH), up);
-                    
+                    if (getWorld()->flameCheck(getX(), getY()+ (i *SPRITE_WIDTH), this))
+                    {
+                        getWorld()->flamethrowerActivated(getX() , getY() + (i *SPRITE_WIDTH), up);
+                    }
+                    else
+                        break;
                 }
                 changeFlameCharges(FlameCharges()-1);
                 break;
             case down:
                 for (int i = 1; i<=3; i++)
                 {
-                    getWorld()->flamethrowerActivated(getX() , getY() - (i *SPRITE_WIDTH), down);
-                    
+                    if (getWorld()->flameCheck(getX(), getY() - (i *SPRITE_WIDTH), this))
+                    {
+                        getWorld()->flamethrowerActivated(getX() , getY() - (i *SPRITE_WIDTH), down);
+                    }
+                    else
+                        break;
                 }
                 changeFlameCharges(FlameCharges()-1);
                 break;
@@ -820,7 +858,7 @@ void GasCanGoodie::activateIfAppropriate(Actor* a)
         getWorld()->getPenelopePointer()->changeFlameCharges(5);
     }
 }
- //Flame
+//Flame
 
 Flame::Flame(double x, double y, StudentWorld* sw, int dir):ActivatingObject(IID_FLAME, x, y, sw, dir, 0)
 {
@@ -841,3 +879,37 @@ void Flame::activateIfAppropriate(Actor *a)
 {
     a->dieByFallOrBurnIfAppropriate();
 }
+
+//Landmine Goodie
+
+LandmineGoodie::LandmineGoodie(double x, double y, StudentWorld* sw):Goodie(IID_LANDMINE_GOODIE, x, y, sw)
+{
+}
+
+void LandmineGoodie::doSomething()
+{}
+
+void LandmineGoodie::activateIfAppropriate(Actor *a)
+{
+    if (a == getWorld()->getPenelopePointer())
+    {
+        setInPlay(false);
+        getWorld()->playSound(SOUND_GOT_GOODIE);
+        //getWorld()->getPenelopePointer()->changeLandmines(2);
+    }
+}
+
+ //PIT
+
+Pit::Pit(double x, double y, StudentWorld* sw) : ActivatingObject(IID_PIT, x, y, sw, right, 0)
+{
+}
+
+void Pit::doSomething()
+{}
+
+void Pit::activateIfAppropriate(Actor *a)
+{
+    a->dieByFallOrBurnIfAppropriate();
+}
+

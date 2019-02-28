@@ -61,7 +61,7 @@ bool StudentWorld::touching(Actor *a1, Actor *a2)
 
 void StudentWorld::flamethrowerActivated(double x, double y, int dir)
 {
-    playSound(SOUND_PLAYER_FIRE);
+   
     Actor* actorptr = new Flame(x, y, this, dir);
     actorVector.push_back(actorptr);
     
@@ -159,7 +159,7 @@ void StudentWorld::loadLevel()
     cout<<s;
     Level lev(assetPath());
     //string levelFile = s;
-    string levelFile = "level02.txt";
+    string levelFile = "level06.txt";
     lev.loadLevel(levelFile); //loading the file
     
     for (int y = 0; y<LEVEL_HEIGHT; y++) //Iterating through every coordinate within the maze
@@ -209,6 +209,14 @@ void StudentWorld::loadLevel()
                     
                 case Level::gas_can_goodie:
                     actorptr = new GasCanGoodie(true_x, true_y, this);
+                    actorVector.push_back(actorptr);
+                    break;
+                case Level::pit:
+                    actorptr = new Pit(true_x, true_y, this);
+                    actorVector.push_back(actorptr);
+                    break;
+                case Level::landmine_goodie:
+                    actorptr = new LandmineGoodie(true_x, true_y, this);
                     actorVector.push_back(actorptr);
                     break;
                 case Level::empty:
@@ -279,6 +287,64 @@ bool StudentWorld::blockCheck(double dest_x, double dest_y, Actor* actorPassed) 
     return !blocked;
 }
 
+bool StudentWorld::flameCheck(double dest_x, double dest_y, Actor* actorPassed) const
+{
+    
+    
+    double ARightX = dest_x+SPRITE_WIDTH-1; //TOP RIGHT CORNER coordinates of the object that requested the move (object A)
+    double ARightY = dest_y+SPRITE_HEIGHT-1;
+    
+    bool blocked = false;
+    ;
+    
+    //cout<<"size: "<<actorVector.size()<<endl;
+    for (int i = 0; i<actorVector.size(); i++)
+    {
+        Actor *thisActor = actorVector[i];
+        
+        
+        
+        double BRightX = thisActor->getX()+SPRITE_WIDTH-1; //TOP RIGHT CORNER coordinates of the object that could potentially block move (object B)
+        double BRightY = thisActor->getY()+SPRITE_HEIGHT-1;
+        
+        
+        if(thisActor == actorPassed) //We do not want to inhibit movement by blocking ourselves
+            continue;
+        
+        //A condition that took me FOREVER to code but checks for overlaps at ANY of the 4 vertices of either object (basically some common area or shared edge prevents movement)
+        
+        if    ((ARightX>=thisActor->getX() && ARightY>=thisActor->getY() && ARightX<=BRightX && ARightY<=BRightY)
+               || (BRightX>=dest_x && BRightY>=dest_y && BRightX<=ARightX && BRightY<=ARightY)
+               || (ARightX>=thisActor->getX() && dest_x<=thisActor->getX() && dest_y>=thisActor->getY() && dest_y<=thisActor->getY()+SPRITE_HEIGHT-1)
+               || (dest_x<=BRightX && dest_x>=thisActor->getX() && ARightY>=thisActor->getY() && ARightY<=BRightY))
+            
+            
+        {
+            
+            if(thisActor->blocksFlame())
+            {
+                blocked = true;
+                break;
+                
+            }
+            
+            if (!thisActor->blocksFlame()) //if the actor does not block movement, then the proposed move is valid
+            {
+                blocked = false;
+                continue;
+            }
+            
+            
+            //return false;
+            
+            
+        }
+        
+    }
+    //return true;
+    return !blocked;
+}
+
 void StudentWorld::recordCitizenInfectedOrDied(Actor* c, int typeOfDeath) //This is a nifty function because a citizen being infected and dying due to a flame have similar processes. Therefore, if the citizen is infected and turns into a zombie, I run the final 2 commands to create a new zombie (I check this by passing a 0 in homage to the movie motif of "patient zero." Otherwise we pass a 1 if the citizen has died due to a pit or a flame
 {
     double c_x = c->getX();
@@ -300,6 +366,7 @@ void StudentWorld::recordCitizenInfectedOrDied(Actor* c, int typeOfDeath) //This
     {
         Actor* actorptr = new DumbZombie(c_x, c_y, this);
         actorVector.push_back(actorptr);
+        playSound(SOUND_ZOMBIE_BORN);
     }
     if(typeOfDeath == 1)
     {
@@ -327,7 +394,7 @@ void StudentWorld::recordZombieDied(Actor *c)
 void StudentWorld::recordCitizenExit(Actor* c)
 {
     delete c;
-    
+    playSound(SOUND_CITIZEN_SAVED);
     for (int i = 0; i<actorVector.size(); i++)
     {
         if (actorVector[i] == c)
