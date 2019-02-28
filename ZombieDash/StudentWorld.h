@@ -32,13 +32,16 @@ public:
     // Record that one more citizen on the current level is gone (exited,
     // died, or turned into a zombie).
     void recordCitizenExit(Actor* c);
-    void recordCitizenInfected(Actor* c);
+    void recordCitizenInfectedOrDied(Actor* c, int typeOfDeath);
+    void recordZombieDied(Actor* c);
     void activateOnAppropriateActors(Actor* someActor); //Activates some function on an actor
     bool isZombieVomitTriggerAt(double x, double y) const; //Checks if there is a human at position (x,y) that can be vomited on
     void levelFailed (bool status); //Used to flag that Penelope has turned into a zombie (i.e. failed that level)
     // Indicate that the player has finished the level if all citizens
     // are gone.
     void recordLevelFinishedIfAllCitizensGone();
+    
+    void flamethrowerActivated(double x, double y, int dir);
     
     bool noMoreCitizens(); //Checks if there are any more citizens
     bool touching(Actor *a1, Actor *a2);

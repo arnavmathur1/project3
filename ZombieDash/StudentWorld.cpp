@@ -17,7 +17,7 @@ int level = 1;
 GameWorld* createStudentWorld(string assetPath)
 {
     
-
+    
     return new StudentWorld(assetPath);
 }
 
@@ -59,13 +59,21 @@ bool StudentWorld::touching(Actor *a1, Actor *a2)
     return false;
 }
 
+void StudentWorld::flamethrowerActivated(double x, double y, int dir)
+{
+    playSound(SOUND_PLAYER_FIRE);
+    Actor* actorptr = new Flame(x, y, this, dir);
+    actorVector.push_back(actorptr);
+    
+}
+
 int StudentWorld::move()
 {
     // This code is here merely to allow the game to build, run, and terminate after you hit enter.
     // Notice that the return value GWSTATUS_PLAYER_DIED will cause our framework to end the current level.
     
-   
-   
+    
+    
     
     if(m_levelFailed)
     {
@@ -79,7 +87,7 @@ int StudentWorld::move()
         actorVector[a]->doSomething(); //Calls on each actor to do something
         activateOnAppropriateActors(actorVector[a]); //Activates any actors that may need activating
         
-     
+        
         if (actorVector[a]->canUseExitAndGetInfected())
         {
             if (actorVector[a] == penelopeptr) //If the actor can use the exit and is penelope, there are additional requirements that must be met before this can happen compared to other humans (i.e. there are no more citizens left in the level)
@@ -90,7 +98,7 @@ int StudentWorld::move()
                     cout<<"WE DONE";
                     playSound(SOUND_LEVEL_FINISHED);
                     level++;
-
+                    
                     return GWSTATUS_FINISHED_LEVEL;
                 }
             }
@@ -138,10 +146,10 @@ void StudentWorld::cleanUp()
 void StudentWorld::loadLevel()
 {
     m_nCitizens = 0;
-
+    
     ostringstream oss;
     //cout<<"1";
-
+    
     //... suppose some code here gives k the value 123
     oss.fill('0');
     oss<<"level" << setw(2) << level <<".txt";
@@ -150,8 +158,8 @@ void StudentWorld::loadLevel()
     string s = oss.str();
     cout<<s;
     Level lev(assetPath());
-    string levelFile = s;
-    //string levelFile = "level02.txt";
+    //string levelFile = s;
+    string levelFile = "level02.txt";
     lev.loadLevel(levelFile); //loading the file
     
     for (int y = 0; y<LEVEL_HEIGHT; y++) //Iterating through every coordinate within the maze
@@ -199,6 +207,10 @@ void StudentWorld::loadLevel()
                     actorVector.push_back(actorptr);
                     break;
                     
+                case Level::gas_can_goodie:
+                    actorptr = new GasCanGoodie(true_x, true_y, this);
+                    actorVector.push_back(actorptr);
+                    break;
                 case Level::empty:
                 default:
                     break;
@@ -218,7 +230,7 @@ bool StudentWorld::blockCheck(double dest_x, double dest_y, Actor* actorPassed) 
     
     bool blocked = false;
     ;
-
+    
     //cout<<"size: "<<actorVector.size()<<endl;
     for (int i = 0; i<actorVector.size(); i++)
     {
@@ -267,7 +279,7 @@ bool StudentWorld::blockCheck(double dest_x, double dest_y, Actor* actorPassed) 
     return !blocked;
 }
 
-void StudentWorld::recordCitizenInfected(Actor* c)
+void StudentWorld::recordCitizenInfectedOrDied(Actor* c, int typeOfDeath) //This is a nifty function because a citizen being infected and dying due to a flame have similar processes. Therefore, if the citizen is infected and turns into a zombie, I run the final 2 commands to create a new zombie (I check this by passing a 0 in homage to the movie motif of "patient zero." Otherwise we pass a 1 if the citizen has died due to a pit or a flame
 {
     double c_x = c->getX();
     double c_y = c->getY();
@@ -280,11 +292,36 @@ void StudentWorld::recordCitizenInfected(Actor* c)
         {
             actorVector.erase(actorVector.begin() + i);
             m_nCitizens--;
+            cout<<"C:"<<m_nCitizens<<endl;
+        }
+    }
+    increaseScore(-1000);
+    if (typeOfDeath == 0)
+    {
+        Actor* actorptr = new DumbZombie(c_x, c_y, this);
+        actorVector.push_back(actorptr);
+    }
+    if(typeOfDeath == 1)
+    {
+        playSound(SOUND_CITIZEN_DIE);
+    }
+}
+
+void StudentWorld::recordZombieDied(Actor *c)
+{
+    playSound(SOUND_ZOMBIE_DIE);
+    delete c;
+    
+    for (int i = 0; i<actorVector.size(); i++)
+    {
+        if (actorVector[i] == c)
+        {
+            actorVector.erase(actorVector.begin() + i);
+            return;
         }
     }
     
-    Actor* actorptr = new DumbZombie(c_x, c_y, this);
-    actorVector.push_back(actorptr);
+    increaseScore(1000); //For a dumb zombie
 }
 
 void StudentWorld::recordCitizenExit(Actor* c)
@@ -336,16 +373,16 @@ bool StudentWorld::isZombieVomitTriggerAt(double x, double y) const
     
     for (int i = 0; i<actorVector.size(); i++)
     {
-    
+        
         double aX = actorVector[i]->getX();
         double aY = actorVector[i]->getY();
-    
+        
         if (x == aX && y == aY)
         {
             if (actorVector[i]->canBeVomitedOn())
                 return true;
         }
-    
+        
     }
     
     return false;
@@ -356,6 +393,7 @@ void StudentWorld::newVomit(double x, double y, int dir)
 {
     Actor* actorptr = new Vomit(x, y, this, dir);
     actorVector.push_back(actorptr); //Adds each new actor to the vector
+    playSound(SOUND_ZOMBIE_VOMIT);
 }
 
 void StudentWorld::levelFailed(bool status)

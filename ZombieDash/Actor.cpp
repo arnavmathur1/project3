@@ -23,6 +23,9 @@ bool Actor::getInPlay()
     return m_inPlay;
 }
 
+void Actor::changeFlameCharges(int newCharges)
+{}
+
 void Actor::setInPlay(bool status)
 {
     m_inPlay = status;
@@ -70,7 +73,7 @@ bool Actor::checkActorMove(double x, double y, Actor* self)
 
 ActivatingObject::ActivatingObject(int imageID, double x, double y, StudentWorld* sw, int direction, int depth): Actor (imageID, x, y, sw, direction, depth)
 {
-    
+    m_ticksLasted = 0;
 }
 
 Exit::Exit(double x, double y, StudentWorld* sw): ActivatingObject(10, x, y, sw, right, 1)
@@ -98,7 +101,7 @@ void Citizen::doSomething()
     
     if(getInfectionDuration() >= 500)
     {
-        getWorld()->recordCitizenInfected(this);
+        getWorld()->recordCitizenInfectedOrDied(this, 0);
         getWorld()->playSound(SOUND_ZOMBIE_BORN);
         return;
     }
@@ -247,6 +250,8 @@ void Citizen::doSomething()
     
 }
 
+
+
 void Human::changeInfection(int newinf)
 {
     m_infectionCount = newinf;
@@ -270,7 +275,7 @@ void Human::infect()
 
 void Citizen::dieByFallOrBurnIfAppropriate()
 {
-    //getWorld()->recordCitizenDied(this);
+    getWorld()->recordCitizenInfectedOrDied(this, 1);
 }
 
 bool Citizen::isParalysed()
@@ -284,6 +289,16 @@ Human::Human(int imageID, double x, double y, StudentWorld* sw): Agent(imageID, 
 {
     m_infectedStatus = false;
     m_infectionCount = 0;
+}
+
+int ActivatingObject::getTicks() const
+{
+    return m_ticksLasted;
+}
+
+void ActivatingObject::addTick()
+{
+    m_ticksLasted++;
 }
 
 bool Human::infected()
@@ -343,12 +358,57 @@ void Penelope::doSomething()
             case KEY_PRESS_RIGHT:
                 moveHelper(getX()+4, getY(), right, this);
                 return;
+            case KEY_PRESS_SPACE:
+                fireFlamethrower(getDirection());
             default:
                 break;
         }
         
     }
     
+}
+
+void Penelope::fireFlamethrower(int dir)
+{
+    if (FlameCharges()>0)
+    {
+        switch (dir)
+        {
+            case left:
+                for (int i = 1; i<=3; i++)
+                {
+                    getWorld()->flamethrowerActivated(getX() - (i *SPRITE_WIDTH), getY(), left);
+                    
+                }
+                changeFlameCharges(FlameCharges()-1);
+                break;
+                
+            case right:
+                for (int i = 1; i<=3; i++)
+                {
+                    getWorld()->flamethrowerActivated(getX() + (i *SPRITE_WIDTH), getY(), right);
+                    
+                }
+                changeFlameCharges(FlameCharges()-1);
+                break;
+            case up:
+                for (int i = 1; i<=3; i++)
+                {
+                    getWorld()->flamethrowerActivated(getX() , getY() + (i *SPRITE_WIDTH), up);
+                    
+                }
+                changeFlameCharges(FlameCharges()-1);
+                break;
+            case down:
+                for (int i = 1; i<=3; i++)
+                {
+                    getWorld()->flamethrowerActivated(getX() , getY() - (i *SPRITE_WIDTH), down);
+                    
+                }
+                changeFlameCharges(FlameCharges()-1);
+                break;
+        }
+    }
 }
 
 Wall::Wall(double x, double y, StudentWorld* sw): Actor(IID_WALL, x, y, sw, right, 0)
@@ -370,6 +430,7 @@ bool Actor::canUseExitAndGetInfected()
     return false;
 }
 
+
 bool Human::canUseExitAndGetInfected()
 {
     return true;
@@ -388,6 +449,26 @@ Wall::~Wall()
 void Actor::activateIfAppropriate(Actor *a)
 {
     
+}
+
+void Actor::dieByFallOrBurnIfAppropriate()
+{
+}
+
+void Penelope::changeFlameCharges(int newCharges)
+{
+    m_nFlameCharges = newCharges;
+    cout<<"fc added";
+}
+
+int Penelope::FlameCharges() const
+{
+    return m_nFlameCharges;
+}
+
+void Penelope::dieByFallOrBurnIfAppropriate()
+{
+    getWorld()->levelFailed(true);
 }
 
 void Exit::activateIfAppropriate(Actor *a)
@@ -421,94 +502,7 @@ Zombie::Zombie(double x, double y, StudentWorld* sw): Agent(1, x, y, sw, right)
     m_movementPlan = 0;
 }
 
-/*
- void Zombie::commonActions()
- {
- if (!isAlive())
- return; //When a citizen is dead this immediately returns. no modifications are made
- 
- if (isParalysed())
- {
- setParalysed(false);
- return;
- }
- 
- setParalysed(true); //Paralyses citizens every alternate tick in connjunction with the if statement above
- 
- if (movementsLeft() == 0)
- {
- newMovement(randInt(3, 10));
- 
- int dir = randInt(0, 3);
- switch (dir)
- {
- case 0:
- setDirection(right);
- break;
- case 1:
- setDirection(left);
- break;
- case 3:
- setDirection(down);
- break;
- case 2:
- setDirection(up);
- break;
- default:
- break;
- }
- }
- if (movementsLeft()>0)
- {
- switch (getDirection())
- {
- case right:
- if (checkActorMove(getX()+1, getY(), this))
- {
- moveHelper(getX()+1, getY(), right, this);
- }
- else
- {
- newMovement(0);
- }
- break;
- case left:
- if (checkActorMove(getX()-1, getY(), this))
- {
- moveHelper(getX()-1, getY(), left, this);
- }
- else
- {
- newMovement(0);
- }
- break;
- case up:
- if (checkActorMove(getX(), getY()+1, this))
- {
- moveHelper(getX(), getY()+1, up, this);
- }
- else
- {
- newMovement(0);
- }
- break;
- case down:
- if (checkActorMove(getX(), getY()-1, this))
- {
- moveHelper(getX(), getY()-1, down, this);
- }
- else
- {
- newMovement(0);
- }
- break;
- default:
- break;
- }
- if (movementsLeft()!=0)
- newMovement(movementsLeft()-1);
- }
- }*/
+
 
 SmartZombie::SmartZombie(double x, double y, StudentWorld* sw):Zombie(x,y,sw)
 {}
@@ -769,22 +763,28 @@ bool Zombie::tryVomit()
     return false;
 }
 
+void DumbZombie::dieByFallOrBurnIfAppropriate()
+{
+    cout<<"@ME DEAD AF";
+    getWorld()->recordZombieDied(this);
+}
+
 //VOMIT
 
 Vomit::Vomit(double x, double y, StudentWorld* sw, int dir):ActivatingObject(IID_VOMIT, x, y, sw, dir, 0)
 {
-    m_ticksLasted = 0;
+    //m_ticksLasted = 0;
 }
 
 void Vomit::doSomething()
 {
-    if (m_ticksLasted == 2)
+    if (getTicks() == 2)
     {
         setInPlay(false);
     }
     
     
-    m_ticksLasted++;
+    addTick();
 }
 
 
@@ -795,4 +795,49 @@ void Vomit::activateIfAppropriate(Actor *a)
     {
         a->infect();
     }
+}
+
+//Goodies
+
+Goodie::Goodie(int IID, double x, double y, StudentWorld* sw):ActivatingObject(IID, x, y, sw, right, 1)
+{
+}
+
+GasCanGoodie::GasCanGoodie(double x, double y, StudentWorld* sw):Goodie(IID_GAS_CAN_GOODIE, x, y, sw)
+{
+}
+
+void GasCanGoodie::doSomething()
+{
+}
+
+void GasCanGoodie::activateIfAppropriate(Actor* a)
+{
+    if (a == getWorld()->getPenelopePointer())
+    {
+        setInPlay(false);
+        getWorld()->playSound(SOUND_GOT_GOODIE);
+        getWorld()->getPenelopePointer()->changeFlameCharges(5);
+    }
+}
+ //Flame
+
+Flame::Flame(double x, double y, StudentWorld* sw, int dir):ActivatingObject(IID_FLAME, x, y, sw, dir, 0)
+{
+    
+}
+
+void Flame::doSomething()
+{
+    if(getTicks() == 2)
+    {
+        setInPlay(false);
+    }
+    
+    addTick();
+}
+
+void Flame::activateIfAppropriate(Actor *a)
+{
+    a->dieByFallOrBurnIfAppropriate();
 }

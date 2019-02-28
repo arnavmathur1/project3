@@ -18,10 +18,12 @@ public:
     //Checks whether a proposed move by an actor is valid
     bool checkActorMove(double x, double y,  Actor* actorPassed);
     virtual void activateIfAppropriate(Actor* a);
+    virtual void changeFlameCharges(int newCharges); //Only applicable for Penelope, for all other actors, nothing happens (so it is redefined more usefully in Penelope's class)
     
-    // Does this object block agent movement?
-    virtual bool blocksMovement() const;
-    
+    virtual bool blocksMovement() const; // Does this object block agent movement?
+    //virtual bool blocksFlame() const;
+    virtual void dieByFallOrBurnIfAppropriate(); //Kills this actor where it is possible (i.e. agents)
+
     virtual bool canBeVomitedOn() const;
     
     StudentWorld* getWorld() const;
@@ -49,6 +51,10 @@ class ActivatingObject : public Actor
 {
 public:
     ActivatingObject(int imageID, double x, double y, StudentWorld* sw, int depth, int dir);
+    int getTicks() const;
+    void addTick();
+private:
+    int m_ticksLasted;
 };
 
 class Exit : public ActivatingObject
@@ -123,14 +129,31 @@ public:
     Penelope(double x, double y, StudentWorld* sw);
     virtual ~Penelope();
     virtual void doSomething();
-    
+    virtual void changeFlameCharges(int newCharges);
+    int FlameCharges() const;
+    void dieByFallOrBurnIfAppropriate();
     
 private:
+    void fireFlamethrower(int dir);
+    int m_nFlameCharges;
     
     
     
 };
 
+class Goodie: public ActivatingObject
+{
+public:
+    Goodie(int IID, double x, double y, StudentWorld* sw);
+};
+
+class GasCanGoodie: public Goodie
+{
+public:
+    GasCanGoodie(double x, double y, StudentWorld* sw);
+    void doSomething();
+    virtual void activateIfAppropriate(Actor* a);
+};
 
 class Zombie : public Agent
 {
@@ -163,7 +186,7 @@ class DumbZombie : public Zombie
 public:
     DumbZombie(double x, double y, StudentWorld* sw);
     virtual void doSomething();
-    //virtual void dieByFallOrBurnIfAppropriate();
+    virtual void dieByFallOrBurnIfAppropriate();
 };
 
 class SmartZombie : public Zombie
@@ -172,6 +195,15 @@ public:
     SmartZombie(double x, double y, StudentWorld* sw);
     virtual void doSomething();
     //virtual void dieByFallOrBurnIfAppropriate();
+};
+
+
+class Flame : public ActivatingObject
+{
+public:
+    Flame(double x, double y, StudentWorld* sw, int dir);
+    void doSomething();
+    virtual void activateIfAppropriate(Actor* a);
 };
 
 #endif // ACTOR_H_
