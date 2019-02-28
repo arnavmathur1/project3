@@ -123,7 +123,7 @@ int StudentWorld::move()
     
     //... suppose some code here gives k the value 123
     statbar.fill('0');
-    statbar<<"Score: "<<setw(6)<<getScore();
+    statbar<<"Score: "<<setw(6)<<getScore()<<"  "<<"Level: "<<getLevel()<<"  "<<"Lives: "<<getLives()<<"  "<<"Vaccines: "<<penelopeptr->Vaccines()<<"  "<<"Flames: "<<penelopeptr->FlameCharges()<<"  "<<"Mines: "<<penelopeptr->Landmines()<<"  "<<"Infected: "<<penelopeptr->getInfectionDuration();
     statbar.fill('0');
     string s = statbar.str();
     setGameStatText(s);
@@ -400,6 +400,7 @@ void StudentWorld::recordZombieDied(Actor *c)
 void StudentWorld::recordCitizenExit(Actor* c)
 {
     delete c;
+    increaseScore(500);
     playSound(SOUND_CITIZEN_SAVED);
     for (int i = 0; i<actorVector.size(); i++)
     {
