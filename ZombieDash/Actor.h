@@ -19,12 +19,16 @@ public:
     bool checkActorMove(double x, double y,  Actor* actorPassed);
     virtual void activateIfAppropriate(Actor* a);
     virtual void changeFlameCharges(int newCharges); //Only applicable for Penelope, for all other actors, nothing happens (so it is redefined more usefully in Penelope's class)
-    
+    virtual void changeLandmines(int newLandmines);
+    virtual void changeVaccines(int newVaccines);
+
     virtual bool blocksMovement() const; // Does this object block agent movement?
     virtual bool blocksFlame() const;
     virtual void dieByFallOrBurnIfAppropriate(); //Kills this actor where it is possible (i.e. agents)
 
     virtual bool canBeVomitedOn() const;
+    
+    virtual bool canExplode() const;
     
     StudentWorld* getWorld() const;
     virtual void infect(); //Infects an actor. This will only have an impact on those actors (humans) that can be infected. For all others, there is no action taken
@@ -132,14 +136,19 @@ public:
     virtual ~Penelope();
     virtual void doSomething();
     virtual void changeFlameCharges(int newCharges);
+    virtual void changeLandmines(int newLandmines);
+    virtual void changeVaccines(int newVaccines);
+    
     int FlameCharges() const;
+    int Landmines() const;
+    int Vaccines() const;
     void dieByFallOrBurnIfAppropriate();
     
 private:
     void fireFlamethrower(int dir);
     int m_nFlameCharges;
-    
-    
+    int m_nLandmines;
+    int m_nVaccines;
     
 };
 
@@ -155,6 +164,7 @@ public:
     GasCanGoodie(double x, double y, StudentWorld* sw);
     virtual void doSomething();
     virtual void activateIfAppropriate(Actor* a);
+    virtual void dieByFallOrBurnIfAppropriate();
 };
 
 class LandmineGoodie : public Goodie
@@ -162,8 +172,18 @@ class LandmineGoodie : public Goodie
 public:
     LandmineGoodie(double x, double y, StudentWorld* sw);
     virtual void doSomething();
-    virtual void activateIfAppropriate(Actor* a); 
+    virtual void activateIfAppropriate(Actor* a);
+    virtual void dieByFallOrBurnIfAppropriate();
+
     
+};
+
+class VaccineGoodie: public Goodie
+{
+public:
+    VaccineGoodie(double x, double y, StudentWorld* sw);
+    virtual void doSomething();
+    virtual void activateIfAppropriate(Actor* a);
 };
 
 class Zombie : public Agent
@@ -205,7 +225,7 @@ class SmartZombie : public Zombie
 public:
     SmartZombie(double x, double y, StudentWorld* sw);
     virtual void doSomething();
-    //virtual void dieByFallOrBurnIfAppropriate();
+    virtual void dieByFallOrBurnIfAppropriate();
 };
 
 
@@ -223,6 +243,20 @@ public:
     Pit(double x, double y, StudentWorld* sw);
     virtual void doSomething();
     virtual void activateIfAppropriate(Actor* a);
+};
+
+class Landmine: public ActivatingObject
+{
+public:
+    Landmine(double x, double y, StudentWorld* sw);
+    virtual void doSomething();
+    bool isActive();
+    virtual bool canExplode() const;
+
+    virtual void activateIfAppropriate(Actor* a);
+    
+private:
+    bool m_active;
 };
 
 

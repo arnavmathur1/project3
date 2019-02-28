@@ -44,13 +44,12 @@ int StudentWorld::init()
 
 bool StudentWorld::touching(Actor *a1, Actor *a2)
 {
-     
+    
     
     double dx = a1->getX() - a2->getX();
     double dy = a1->getY() - a2->getY();
     
     double distance = sqrt((dx*dx) + (dy*dy));
-    //cout<<distance<<" ";
     if (distance <= 10)
     {
         return true;
@@ -94,8 +93,7 @@ int StudentWorld::move()
             {
                 if (m_levelCompleted) //If the levelCompleted boolean has been flagged true, Penelope has met the requirements to exit and is at the exit, so the level has been completed
                 {
-                    cout<<m_nCitizens;
-                    cout<<"WE DONE";
+                    
                     playSound(SOUND_LEVEL_FINISHED);
                     level++;
                     
@@ -137,8 +135,7 @@ void StudentWorld::cleanUp()
     }
     actorVector.clear(); //Empties the vector
     
-    if (actorVector.empty())
-        cout<<"  Mission ACCOMPLISHED";
+
     
     
 }
@@ -148,7 +145,6 @@ void StudentWorld::loadLevel()
     m_nCitizens = 0;
     
     ostringstream oss;
-    //cout<<"1";
     
     //... suppose some code here gives k the value 123
     oss.fill('0');
@@ -156,10 +152,9 @@ void StudentWorld::loadLevel()
     
     
     string s = oss.str();
-    cout<<s;
     Level lev(assetPath());
     //string levelFile = s;
-    string levelFile = "level06.txt";
+    string levelFile = "level03.txt";
     lev.loadLevel(levelFile); //loading the file
     
     for (int y = 0; y<LEVEL_HEIGHT; y++) //Iterating through every coordinate within the maze
@@ -194,7 +189,6 @@ void StudentWorld::loadLevel()
                     actorptr = new Citizen(true_x, true_y, this);
                     actorVector.push_back(actorptr);
                     m_nCitizens++;
-                    cout<<m_nCitizens<<endl;
                     break;
                     
                 case Level::smart_zombie:
@@ -211,14 +205,22 @@ void StudentWorld::loadLevel()
                     actorptr = new GasCanGoodie(true_x, true_y, this);
                     actorVector.push_back(actorptr);
                     break;
+                    
                 case Level::pit:
                     actorptr = new Pit(true_x, true_y, this);
                     actorVector.push_back(actorptr);
                     break;
+                    
                 case Level::landmine_goodie:
                     actorptr = new LandmineGoodie(true_x, true_y, this);
                     actorVector.push_back(actorptr);
                     break;
+                    
+                case Level::vaccine_goodie:
+                    actorptr = new VaccineGoodie(true_x, true_y, this);
+                    actorVector.push_back(actorptr);
+                    break;
+                    
                 case Level::empty:
                 default:
                     break;
@@ -239,7 +241,6 @@ bool StudentWorld::blockCheck(double dest_x, double dest_y, Actor* actorPassed) 
     bool blocked = false;
     ;
     
-    //cout<<"size: "<<actorVector.size()<<endl;
     for (int i = 0; i<actorVector.size(); i++)
     {
         Actor *thisActor = actorVector[i];
@@ -297,7 +298,6 @@ bool StudentWorld::flameCheck(double dest_x, double dest_y, Actor* actorPassed) 
     bool blocked = false;
     ;
     
-    //cout<<"size: "<<actorVector.size()<<endl;
     for (int i = 0; i<actorVector.size(); i++)
     {
         Actor *thisActor = actorVector[i];
@@ -358,7 +358,6 @@ void StudentWorld::recordCitizenInfectedOrDied(Actor* c, int typeOfDeath) //This
         {
             actorVector.erase(actorVector.begin() + i);
             m_nCitizens--;
-            cout<<"C:"<<m_nCitizens<<endl;
         }
     }
     increaseScore(-1000);
@@ -415,8 +414,14 @@ void StudentWorld::activateOnAppropriateActors(Actor* someActor)
 {
     for (int i = 0; i<actorVector.size(); i++)
     {
+        
+        
         if (touching(actorVector[i], someActor))
         {
+            if(someActor == actorVector[i])
+            {
+                continue;
+            }
             actorVector[i]->activateIfAppropriate(someActor);
         }
     }
@@ -433,6 +438,18 @@ bool StudentWorld::noMoreCitizens()
 void StudentWorld::SetLevelCompleted(bool levelStatus)
 {
     m_levelCompleted = true;
+}
+
+void StudentWorld::newLandmine(double x, double y)
+{
+    Actor* actorptr = new Landmine(x, y, this);
+    actorVector.push_back(actorptr); //Adds each new actor to the vector
+}
+
+void StudentWorld::newPit(double x, double y)
+{
+    Actor* actorptr = new Pit(x, y, this);
+    actorVector.push_back(actorptr); //Adds each new actor to the vector
 }
 
 bool StudentWorld::isZombieVomitTriggerAt(double x, double y) const

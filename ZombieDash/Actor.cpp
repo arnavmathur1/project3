@@ -26,6 +26,9 @@ bool Actor::getInPlay()
 void Actor::changeFlameCharges(int newCharges)
 {}
 
+void Actor::changeLandmines(int newLandmines)
+{}
+
 void Actor::setInPlay(bool status)
 {
     m_inPlay = status;
@@ -44,6 +47,10 @@ void Actor::doSomething()
 bool Actor::blocksFlame() const
 {
     return false;
+}
+
+void Actor::changeVaccines(int newVaccines)
+{
 }
 
 bool Exit::blocksFlame() const
@@ -116,6 +123,7 @@ void Citizen::doSomething()
     
     if(getInfectionDuration() >= 500)
     {
+        setInPlay(false);
         getWorld()->recordCitizenInfectedOrDied(this, 0);
         getWorld()->playSound(SOUND_ZOMBIE_BORN);
         return;
@@ -270,7 +278,7 @@ void Citizen::doSomething()
 void Human::changeInfection(int newinf)
 {
     m_infectionCount = newinf;
-} 
+}
 
 void Agent::moveHelper(double x, double y,int dir, Actor *ap)
 {
@@ -296,6 +304,7 @@ void Citizen::infect()
 
 void Citizen::dieByFallOrBurnIfAppropriate()
 {
+    setInPlay(false);
     getWorld()->recordCitizenInfectedOrDied(this, 1);
 }
 
@@ -334,8 +343,9 @@ bool Human::canBeVomitedOn() const
 
 Penelope::Penelope(double x, double y, StudentWorld* sw): Human(0, x, y, sw)
 {
-    //setDirection(right);
-    
+    m_nLandmines = 0;
+    m_nFlameCharges = 0;
+    m_nVaccines = 0;
 }
 
 Penelope::~Penelope()
@@ -373,20 +383,42 @@ void Penelope::doSomething()
                 moveHelper(getX(), getY()-4, down, this);
                 
                 return;
+                
             case KEY_PRESS_LEFT:
                 moveHelper(getX()-4, getY(), left, this);
                 return;
+                
             case KEY_PRESS_RIGHT:
                 moveHelper(getX()+4, getY(), right, this);
                 return;
+                
             case KEY_PRESS_SPACE:
                 fireFlamethrower(getDirection());
+                break;
+                
+            case KEY_PRESS_TAB:
+                getWorld()->newLandmine(getX(), getY());
+                
+            case KEY_PRESS_ENTER:
+                if(Vaccines()>0)
+                {
+                    clearInfection();
+                    changeVaccines(Vaccines()-1);
+                }
+                break;
+                
             default:
                 break;
         }
         
     }
     
+}
+
+void Human::clearInfection()
+{
+    m_infectedStatus = false;
+    m_infectionCount = 0;
 }
 
 void Penelope::fireFlamethrower(int dir)
@@ -449,6 +481,11 @@ void Penelope::fireFlamethrower(int dir)
     }
 }
 
+bool Actor::canExplode() const
+{
+    return false;
+}
+
 Wall::Wall(double x, double y, StudentWorld* sw): Actor(IID_WALL, x, y, sw, right, 0)
 {
     
@@ -499,19 +536,41 @@ void Penelope::changeFlameCharges(int newCharges)
     cout<<"fc added";
 }
 
+void Penelope::changeLandmines(int newLandmines)
+{
+    m_nLandmines = newLandmines;
+    cout<<"lm added";
+}
+
+void Penelope::changeVaccines(int newVaccines)
+{
+    m_nVaccines = newVaccines;
+    cout<<"vc added";
+}
+
 int Penelope::FlameCharges() const
 {
     return m_nFlameCharges;
 }
 
+int Penelope::Landmines() const
+{
+    return m_nLandmines;
+}
+
+int Penelope::Vaccines() const
+{
+    return m_nVaccines;
+}
+
 void Penelope::dieByFallOrBurnIfAppropriate()
 {
-    getWorld()->levelFailed(true);
+    if (getInPlay())
+        getWorld()->levelFailed(true);
 }
 
 void Exit::activateIfAppropriate(Actor *a)
 {
-    //cout<<"Its being called";
     StudentWorld* sw = getWorld(); //Creates a new pointer to the student world
     /*if (getWorld()->touching(this, sw->getPenelopePointer())) //Checks if the wall and penelope are touching
      {
@@ -803,10 +862,15 @@ bool Zombie::tryVomit()
 
 void DumbZombie::dieByFallOrBurnIfAppropriate()
 {
-    cout<<"@ME DEAD AF";
-    getWorld()->recordZombieDied(this);
+    if (getInPlay())
+        getWorld()->recordZombieDied(this);
 }
 
+void SmartZombie::dieByFallOrBurnIfAppropriate()
+{
+    if (getInPlay())
+        getWorld()->recordZombieDied(this);
+}
 //VOMIT
 
 Vomit::Vomit(double x, double y, StudentWorld* sw, int dir):ActivatingObject(IID_VOMIT, x, y, sw, dir, 0)
@@ -816,6 +880,9 @@ Vomit::Vomit(double x, double y, StudentWorld* sw, int dir):ActivatingObject(IID
 
 void Vomit::doSomething()
 {
+    if (!getInPlay())
+        return;
+    
     if (getTicks() == 2)
     {
         setInPlay(false);
@@ -829,13 +896,15 @@ void Vomit::doSomething()
 
 void Vomit::activateIfAppropriate(Actor *a)
 {
+    if (!getInPlay())
+        return;
     if (a->canUseExitAndGetInfected())
     {
         a->infect();
     }
 }
 
-//Goodies
+//Goodie
 
 Goodie::Goodie(int IID, double x, double y, StudentWorld* sw):ActivatingObject(IID, x, y, sw, right, 1)
 {
@@ -845,18 +914,32 @@ GasCanGoodie::GasCanGoodie(double x, double y, StudentWorld* sw):Goodie(IID_GAS_
 {
 }
 
+//GasCanGoodie
+
 void GasCanGoodie::doSomething()
 {
+    if (!getInPlay())
+        return;
 }
 
 void GasCanGoodie::activateIfAppropriate(Actor* a)
 {
+    if (!getInPlay())
+        return;
+    if (!a->getInPlay())
+        return;
     if (a == getWorld()->getPenelopePointer())
     {
+        getWorld()->increaseScore(50);
         setInPlay(false);
         getWorld()->playSound(SOUND_GOT_GOODIE);
         getWorld()->getPenelopePointer()->changeFlameCharges(5);
     }
+}
+
+void GasCanGoodie::dieByFallOrBurnIfAppropriate()
+{
+    setInPlay(false);
 }
 //Flame
 
@@ -867,6 +950,8 @@ Flame::Flame(double x, double y, StudentWorld* sw, int dir):ActivatingObject(IID
 
 void Flame::doSomething()
 {
+    
+    
     if(getTicks() == 2)
     {
         setInPlay(false);
@@ -877,7 +962,39 @@ void Flame::doSomething()
 
 void Flame::activateIfAppropriate(Actor *a)
 {
+    if (!getInPlay())
+        return;
+    
+    if (!a->getInPlay())
+        return;
+    
+    if (a->canExplode())
+        a->activateIfAppropriate(this);
+    
     a->dieByFallOrBurnIfAppropriate();
+}
+
+//Vaccine Goodie
+VaccineGoodie::VaccineGoodie(double x, double y, StudentWorld* sw):Goodie(IID_VACCINE_GOODIE, x, y, sw)
+{
+}
+
+void VaccineGoodie::doSomething()
+{
+    if (!getInPlay())
+        return;
+}
+
+void VaccineGoodie::activateIfAppropriate(Actor *a)
+{
+    if (a == getWorld()->getPenelopePointer())
+    {
+        getWorld()->increaseScore(50);
+        setInPlay(false);
+        getWorld()->playSound(SOUND_GOT_GOODIE);
+        getWorld()->getPenelopePointer()->changeVaccines(1);
+        
+    }
 }
 
 //Landmine Goodie
@@ -886,17 +1003,34 @@ LandmineGoodie::LandmineGoodie(double x, double y, StudentWorld* sw):Goodie(IID_
 {
 }
 
+
 void LandmineGoodie::doSomething()
-{}
+{
+    if (!getInPlay())
+        return;
+}
+
 
 void LandmineGoodie::activateIfAppropriate(Actor *a)
 {
+    if (!a->getInPlay())
+        return;
+    
+    if (!getInPlay())
+        return;
+    
     if (a == getWorld()->getPenelopePointer())
     {
+        getWorld()->increaseScore(50);
         setInPlay(false);
         getWorld()->playSound(SOUND_GOT_GOODIE);
-        //getWorld()->getPenelopePointer()->changeLandmines(2);
+        getWorld()->getPenelopePointer()->changeLandmines(2);
     }
+}
+
+void LandmineGoodie::dieByFallOrBurnIfAppropriate()
+{
+    setInPlay(false);
 }
 
  //PIT
@@ -906,10 +1040,109 @@ Pit::Pit(double x, double y, StudentWorld* sw) : ActivatingObject(IID_PIT, x, y,
 }
 
 void Pit::doSomething()
-{}
+{
+    if (!getInPlay())
+        return;
+    
+}
 
 void Pit::activateIfAppropriate(Actor *a)
 {
+    if (!a->getInPlay())
+        return;
+    
     a->dieByFallOrBurnIfAppropriate();
+
 }
 
+//LANDMINE
+
+Landmine::Landmine(double x, double y, StudentWorld* sw) : ActivatingObject(IID_LANDMINE, x, y, sw, right, 1)
+{
+    m_active = false;
+}
+
+bool Landmine::isActive()
+{
+    return m_active;
+}
+
+void Landmine::doSomething()
+{
+    if(!getInPlay())
+        return;
+    if (getTicks()==30)
+    {
+        cout<<"CHECL"<<endl;
+        m_active = true; //Activate Landmine after 30 ticks
+        return;
+    }
+
+    addTick();
+}
+
+bool Landmine::canExplode() const
+{
+    return true;
+}
+
+void Landmine::activateIfAppropriate(Actor *a)
+{
+    if (!a->getInPlay())
+        return;
+    if (isActive())
+    {
+        cout<<"here"<<endl;
+        setInPlay(false);
+        getWorld()->playSound(SOUND_LANDMINE_EXPLODE);
+        
+        if (getWorld()->flameCheck(getX() , getY(), this))
+        {
+            getWorld()->flamethrowerActivated(getX() , getY(), up); //Current Point
+        }
+        
+        if (getWorld()->flameCheck(getX() - SPRITE_WIDTH, getY(), this)) //left
+        {
+            getWorld()->flamethrowerActivated(getX() - SPRITE_WIDTH, getY(), left);
+        }
+        
+        if (getWorld()->flameCheck(getX() + SPRITE_WIDTH, getY(), this)) //right
+        {
+            getWorld()->flamethrowerActivated(getX() + SPRITE_WIDTH, getY(), right);
+        }
+        
+        if (getWorld()->flameCheck(getX() , getY()+ SPRITE_HEIGHT, this)) //up
+        {
+            getWorld()->flamethrowerActivated(getX() , getY()+ SPRITE_HEIGHT, up);
+        }
+        
+        if (getWorld()->flameCheck(getX(), getY()- SPRITE_HEIGHT, this)) //down
+        {
+            getWorld()->flamethrowerActivated(getX() , getY()- SPRITE_HEIGHT, up);
+        }
+        
+        if (getWorld()->flameCheck(getX() + SPRITE_WIDTH, getY()+ SPRITE_HEIGHT, this)) //NW
+        {
+            getWorld()->flamethrowerActivated(getX() + SPRITE_WIDTH, getY()+ SPRITE_HEIGHT, right);
+        }
+        
+        if (getWorld()->flameCheck(getX() - SPRITE_WIDTH, getY() + SPRITE_HEIGHT, this)) //NE
+        {
+            getWorld()->flamethrowerActivated(getX() - SPRITE_WIDTH, getY() + SPRITE_HEIGHT, right);
+        }
+        
+        if (getWorld()->flameCheck(getX() + SPRITE_WIDTH, getY()- SPRITE_HEIGHT, this)) //SW
+        {
+            getWorld()->flamethrowerActivated(getX() + SPRITE_WIDTH, getY()- SPRITE_HEIGHT, right);
+        }
+        
+        if (getWorld()->flameCheck(getX() - SPRITE_WIDTH, getY()- SPRITE_HEIGHT, this)) //SW
+        {
+            getWorld()->flamethrowerActivated(getX() - SPRITE_WIDTH, getY() - SPRITE_HEIGHT, right);
+        }
+        
+        //Introducing a new pit
+        getWorld()->newPit(getX(), getY());
+        
+    }
+}
