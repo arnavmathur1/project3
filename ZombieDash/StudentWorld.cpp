@@ -119,7 +119,14 @@ int StudentWorld::move()
         
     }
     
+    ostringstream statbar;
     
+    //... suppose some code here gives k the value 123
+    statbar.fill('0');
+    statbar<<"Score: "<<setw(6)<<getScore();
+    statbar.fill('0');
+    string s = statbar.str();
+    setGameStatText(s);
     
     return GWSTATUS_CONTINUE_GAME;
     
