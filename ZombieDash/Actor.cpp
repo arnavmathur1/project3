@@ -270,7 +270,7 @@ void Citizen::doSomething()
 void Human::changeInfection(int newinf)
 {
     m_infectionCount = newinf;
-}
+} 
 
 void Agent::moveHelper(double x, double y,int dir, Actor *ap)
 {

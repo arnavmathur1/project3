@@ -162,7 +162,7 @@ class LandmineGoodie : public Goodie
 public:
     LandmineGoodie(double x, double y, StudentWorld* sw);
     virtual void doSomething();
-    virtual void activateIfAppropriate(Actor* a);
+    virtual void activateIfAppropriate(Actor* a); 
     
 };
 

@@ -44,7 +44,7 @@ int StudentWorld::init()
 
 bool StudentWorld::touching(Actor *a1, Actor *a2)
 {
-    
+     
     
     double dx = a1->getX() - a2->getX();
     double dy = a1->getY() - a2->getY();
