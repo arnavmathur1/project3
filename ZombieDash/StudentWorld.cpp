@@ -12,7 +12,7 @@
 using namespace std;
 
 
-
+int level = 1;
 
 GameWorld* createStudentWorld(string assetPath)
 {
@@ -64,17 +64,8 @@ int StudentWorld::move()
     // This code is here merely to allow the game to build, run, and terminate after you hit enter.
     // Notice that the return value GWSTATUS_PLAYER_DIED will cause our framework to end the current level.
     
-   /*
-    ostringstream oss;
-    int k=123;
-    //... suppose some code here gives k the value 123
-    oss << setw(5) << k << endl;
-    oss.fill('*');
-    oss << setw(5) << k << endl;
-    oss << setw(4) << k << endl;
-    oss.fill('0');
-    oss << setw(5) << k << endl;
-    string s = oss.str();*/
+   
+   
     
     if(m_levelFailed)
     {
@@ -98,6 +89,8 @@ int StudentWorld::move()
                     cout<<m_nCitizens;
                     cout<<"WE DONE";
                     playSound(SOUND_LEVEL_FINISHED);
+                    level++;
+
                     return GWSTATUS_FINISHED_LEVEL;
                 }
             }
@@ -146,10 +139,19 @@ void StudentWorld::loadLevel()
 {
     m_nCitizens = 0;
 
+    ostringstream oss;
+    //cout<<"1";
+
+    //... suppose some code here gives k the value 123
+    oss.fill('0');
+    oss<<"level" << setw(2) << level <<".txt";
     
     
+    string s = oss.str();
+    cout<<s;
     Level lev(assetPath());
-    string levelFile = "level02.txt";
+    string levelFile = s;
+    //string levelFile = "level02.txt";
     lev.loadLevel(levelFile); //loading the file
     
     for (int y = 0; y<LEVEL_HEIGHT; y++) //Iterating through every coordinate within the maze
@@ -214,7 +216,9 @@ bool StudentWorld::blockCheck(double dest_x, double dest_y, Actor* actorPassed) 
     double ARightX = dest_x+SPRITE_WIDTH-1; //TOP RIGHT CORNER coordinates of the object that requested the move (object A)
     double ARightY = dest_y+SPRITE_HEIGHT-1;
     
-    
+    bool blocked = false;
+    ;
+
     //cout<<"size: "<<actorVector.size()<<endl;
     for (int i = 0; i<actorVector.size(); i++)
     {
@@ -239,19 +243,28 @@ bool StudentWorld::blockCheck(double dest_x, double dest_y, Actor* actorPassed) 
             
         {
             
+            if(thisActor->blocksMovement())
+            {
+                blocked = true;
+                break;
+                
+            }
+            
             if (!thisActor->blocksMovement()) //if the actor does not block movement, then the proposed move is valid
             {
-                
-                return true;
+                blocked = false;
+                continue;
             }
             
             
-            return false;
+            //return false;
+            
             
         }
         
     }
-    return true;
+    //return true;
+    return !blocked;
 }
 
 void StudentWorld::recordCitizenInfected(Actor* c)

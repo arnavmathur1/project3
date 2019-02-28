@@ -99,7 +99,7 @@ void Citizen::doSomething()
     if(getInfectionDuration() >= 500)
     {
         getWorld()->recordCitizenInfected(this);
-        getWorld()->playSound(SOUND_CITIZEN_DIE);
+        getWorld()->playSound(SOUND_ZOMBIE_BORN);
         return;
     }
     
