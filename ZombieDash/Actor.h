@@ -25,7 +25,7 @@ public:
     virtual bool blocksMovement() const; // Does this object block agent movement?
     virtual bool blocksFlame() const;
     virtual void dieByFallOrBurnIfAppropriate(); //Kills this actor where it is possible (i.e. agents)
-
+    virtual bool hasVaccine();
     virtual bool canBeVomitedOn() const;
     
     virtual bool canExplode() const;
@@ -218,6 +218,9 @@ public:
     DumbZombie(double x, double y, StudentWorld* sw);
     virtual void doSomething();
     virtual void dieByFallOrBurnIfAppropriate();
+    virtual bool hasVaccine();
+private:
+    bool m_hasVaccine;
 };
 
 class SmartZombie : public Zombie

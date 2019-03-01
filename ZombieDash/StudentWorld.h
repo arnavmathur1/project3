@@ -34,7 +34,7 @@ public:
     // died, or turned into a zombie).
     void recordCitizenExit(Actor* c);
     void recordCitizenInfectedOrDied(Actor* c, int typeOfDeath);
-    void recordZombieDied(Actor* c);
+    void recordZombieDied(Actor* c, int typeOfZombie);
     void activateOnAppropriateActors(Actor* someActor); //Activates some function on an actor
     bool isZombieVomitTriggerAt(double x, double y) const; //Checks if there is a human at position (x,y) that can be vomited on
     void levelFailed (bool status); //Used to flag that Penelope has turned into a zombie (i.e. failed that level)
@@ -53,8 +53,13 @@ public:
     
     Actor* getPenelopePointer();
     
+    // Return true if there is a living human, otherwise false.  If true,
+    // otherX, otherY, and distance will be set to the location and distance
+    // of the human nearest to (x,y).
+    Actor* locateNearestVomitTrigger(double x, double y, double& otherX, double& otherY, double& distance);
+    
 private:
-    void loadLevel();
+    int loadLevel();
     
     
     

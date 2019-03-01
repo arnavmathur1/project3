@@ -36,7 +36,11 @@ StudentWorld::~StudentWorld()
 int StudentWorld::init()
 {
     
-    loadLevel();
+    int outcome = loadLevel();
+    
+if (outcome!=GWSTATUS_CONTINUE_GAME)
+    return outcome;
+    
     m_levelCompleted = false;
     m_levelFailed = false;
     return GWSTATUS_CONTINUE_GAME;
@@ -147,7 +151,7 @@ void StudentWorld::cleanUp()
     
 }
 
-void StudentWorld::loadLevel()
+int StudentWorld::loadLevel()
 {
     m_nCitizens = 0;
     
@@ -160,9 +164,15 @@ void StudentWorld::loadLevel()
     
     string s = oss.str();
     Level lev(assetPath());
-    //string levelFile = s;
-    string levelFile = "level03.txt";
-    lev.loadLevel(levelFile); //loading the file
+    string levelFile = s;
+    //string levelFile = "level06.txt";
+    Level::LoadResult result = lev.loadLevel(levelFile); //loading the file
+    
+    if (result == Level::load_fail_bad_format)
+        return GWSTATUS_LEVEL_ERROR;
+    
+    if (result == Level::load_fail_file_not_found)
+        return GWSTATUS_PLAYER_WON;
     
     for (int y = 0; y<LEVEL_HEIGHT; y++) //Iterating through every coordinate within the maze
     {
@@ -234,7 +244,7 @@ void StudentWorld::loadLevel()
             }
         }
     }
-    
+    return GWSTATUS_CONTINUE_GAME;
 }
 
 
@@ -370,9 +380,21 @@ void StudentWorld::recordCitizenInfectedOrDied(Actor* c, int typeOfDeath) //This
     increaseScore(-1000);
     if (typeOfDeath == 0)
     {
-        Actor* actorptr = new DumbZombie(c_x, c_y, this);
+        int zombieprobs = randInt(1, 10);
+        
+        if(zombieprobs<=3)
+        {
+        
+        Actor* actorptr = new SmartZombie(c_x, c_y, this);
         actorVector.push_back(actorptr);
         playSound(SOUND_ZOMBIE_BORN);
+        }
+        else
+        {
+            Actor* actorptr = new DumbZombie(c_x, c_y, this);
+            actorVector.push_back(actorptr);
+            playSound(SOUND_ZOMBIE_BORN);
+        }
     }
     if(typeOfDeath == 1)
     {
@@ -380,8 +402,36 @@ void StudentWorld::recordCitizenInfectedOrDied(Actor* c, int typeOfDeath) //This
     }
 }
 
-void StudentWorld::recordZombieDied(Actor *c)
+void StudentWorld::recordZombieDied(Actor *c, int typeOfZombie)
 {
+    if (c->hasVaccine())
+    {
+        double tempx = c->getX();
+        double tempy = c->getY();
+        
+        int dir = randInt(0, 3);
+        switch (dir)
+        {
+            case 0:
+                if(c->checkActorMove(tempx+SPRITE_WIDTH, tempy, c))
+                    new VaccineGoodie(tempx+SPRITE_WIDTH, tempy, this);
+                break;
+            case 1:
+                if(c->checkActorMove(tempx-SPRITE_WIDTH, tempy, c))
+                    new VaccineGoodie(tempx-SPRITE_WIDTH, tempy, this);
+                break;
+            case 3:
+                if(c->checkActorMove(tempx, tempy -SPRITE_HEIGHT, c))
+                    new VaccineGoodie(tempx, tempy -SPRITE_HEIGHT , this);
+                break;
+            case 2:
+                if(c->checkActorMove(tempx, tempy +SPRITE_HEIGHT, c))
+                    new VaccineGoodie(tempx, tempy + SPRITE_HEIGHT , this);
+                break;
+            default:
+                break;
+        }
+    }
     playSound(SOUND_ZOMBIE_DIE);
     delete c;
     
@@ -394,7 +444,13 @@ void StudentWorld::recordZombieDied(Actor *c)
         }
     }
     
-    increaseScore(1000); //For a dumb zombie
+    if (typeOfZombie == 0)
+    {
+        increaseScore(1000); //For a dumb zombie
+        
+    }
+    if (typeOfZombie == 1)
+        increaseScore(2000);
 }
 
 void StudentWorld::recordCitizenExit(Actor* c)
@@ -491,4 +547,35 @@ void StudentWorld::newVomit(double x, double y, int dir)
 void StudentWorld::levelFailed(bool status)
 {
     m_levelFailed = status;
+}
+
+Actor* StudentWorld::locateNearestVomitTrigger(double x, double y, double& otherX, double& otherY, double& distance)
+{
+    otherX = otherY = 256;
+    
+    double minD = 363;
+    Actor* minActor = nullptr;
+    for (int i = 0; i<actorVector.size(); i++)
+    {
+        if (!actorVector[i]->canUseExitAndGetInfected())
+        {
+            continue;
+        }
+        double dx = x - actorVector[i]->getX();
+        double dy = y - actorVector[i]->getY();
+        
+        double d = sqrt((dx*dx) + (dy*dy));
+        
+        
+        
+        if (d<minD)
+        {
+            
+            distance = d;
+            otherX = actorVector[i]->getX();
+            otherY = actorVector[i]->getY();
+            minActor = actorVector[i];
+        }
+    }
+    return minActor;
 }

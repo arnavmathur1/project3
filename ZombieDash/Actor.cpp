@@ -481,6 +481,11 @@ void Penelope::fireFlamethrower(int dir)
     }
 }
 
+bool Actor::hasVaccine()
+{
+    return false;
+}
+
 bool Actor::canExplode() const
 {
     return false;
@@ -533,19 +538,16 @@ void Actor::dieByFallOrBurnIfAppropriate()
 void Penelope::changeFlameCharges(int newCharges)
 {
     m_nFlameCharges = newCharges;
-    cout<<"fc added";
 }
 
 void Penelope::changeLandmines(int newLandmines)
 {
     m_nLandmines = newLandmines;
-    cout<<"lm added";
 }
 
 void Penelope::changeVaccines(int newVaccines)
 {
     m_nVaccines = newVaccines;
-    cout<<"vc added";
 }
 
 int Penelope::FlameCharges() const
@@ -585,7 +587,6 @@ void Exit::activateIfAppropriate(Actor *a)
     else if (a->canUseExitAndGetInfected())
     {
         sw->recordCitizenExit(a);
-        cout<<"YEEEEEEET";
     }
     
 }
@@ -607,7 +608,11 @@ SmartZombie::SmartZombie(double x, double y, StudentWorld* sw):Zombie(x,y,sw)
 void SmartZombie::doSomething()
 {
     if (!isAlive())
-        return; //When a citizen is dead this immediately returns. no modifications are made
+        return; //When a zombie is dead this immediately returns. no modifications are made
+    
+    
+    if(!getInPlay())
+        return;
     
     if (isParalysed())
     {
@@ -615,29 +620,170 @@ void SmartZombie::doSomething()
         return;
     }
     
-    setParalysed(true); //Paralyses citizens every alternate tick in connjunction with the if statement above
+    if(tryVomit())
+        return;
+    
+    setParalysed(true); //Paralyses zombies every alternate tick in connjunction with the if statement above
+    
+    
+    double closestHumanX, closestHumanY = LEVEL_WIDTH;
+    double minD = 363; //sqrt(2*256^2) finds the max distance between 2 objects in this game
+    
+    Actor* a = getWorld()->locateNearestVomitTrigger(getX(), getY(), closestHumanX, closestHumanY, minD);
+    
+    
+    
     
     if (movementsLeft() == 0)
     {
-        newMovement(randInt(3, 10));
         
-        int dir = randInt(0, 3);
-        switch (dir)
+        newMovement(randInt(3, 10));
+        if (minD>80)
         {
-            case 0:
-                setDirection(right);
-                break;
-            case 1:
-                setDirection(left);
-                break;
-            case 3:
-                setDirection(down);
-                break;
-            case 2:
+            int dir = randInt(0, 3);
+            switch (dir)
+            {
+                case 0:
+                    setDirection(right);
+                    break;
+                case 1:
+                    setDirection(left);
+                    break;
+                case 3:
+                    setDirection(down);
+                    break;
+                case 2:
+                    setDirection(up);
+                    break;
+                default:
+                    break;
+            }
+            
+        }
+        else if (minD<=80) //Checking this d is <80 pixels
+        {
+            double dx = getX() - closestHumanX;
+            double dy = getY() - closestHumanY;
+            
+            if (getX() == a->getX() && dy<0)
+            {
+                /*
+                 setDirection(up);
+                 if(checkActorMove(getX(), getY()+1, this)) JUNK CODE IGNORE PLS
+                 moveTo(getX(), getY()+1);
+                 */
                 setDirection(up);
-                break;
-            default:
-                break;
+                return;
+            }
+            else if (getX() == a->getX() && dy>0)
+            {
+                setDirection(down);
+                //moveHelper(getX(), getY()-1, down, this);
+                /*setDirection(down);
+                 
+                 if(checkActorMove(getX(), getY()-1, this))
+                 moveTo(getX(), getY()-1);*/
+                return;
+            }
+            
+            
+            else if (getY() == a->getY() && dx<0)
+            {
+                /*
+                 setDirection(right);
+                 if(checkActorMove(getX()+1, getY(), this))
+                 moveTo(getX()+1, getY());*/
+                //moveHelper(getX()+1, getY(), right, this);
+                setDirection(right);
+                return;
+            }
+            else if (getY() == a->getY() && dx>0)
+            {
+                /*
+                 setDirection(left);
+                 if(checkActorMove(getX()-1, getY(), this))
+                 moveTo(getX()-1, getY());*/
+                //moveHelper(getX()-1, getY(), left, this);
+                setDirection(left);
+                return;
+            }
+            
+            else if (dy<0 && dx<0) //We now check each direction sequentially for the most appropriate citizen move based on its and Penelope's current position
+            {
+                int result = randInt(0, 1);
+                
+                if (result == 0) //Checking if up is valid
+                {
+                    if(checkActorMove(getX(), getY()+1, this))
+                    {
+                        setDirection(up);
+                    }
+                }
+                else if (checkActorMove(getX()+1, getY(), this))
+                {
+                    setDirection(right);
+                }
+                return;
+                
+            }
+            
+            
+            else if (dy>0 && dx<0)
+            {
+                int result = randInt(0, 1);
+                
+                if (result == 0)
+                {
+                    if(checkActorMove(getX(), getY()-1, this))
+                    {
+                        setDirection(down);
+                    }
+                }
+                else if (checkActorMove(getX()+1, getY(), this))
+                {
+                    setDirection(right);
+                }
+                return;
+                
+            }
+            
+            else if (dy<0 && dx>0)
+            {
+                int result = randInt(0, 1);
+                
+                if (result == 0) //Checking if up is valid
+                {
+                    if(checkActorMove(getX(), getY()+1, this))
+                    {
+                        setDirection(up);
+                    }
+                }
+                else if (checkActorMove(getX()-1, getY(), this))
+                {
+                    setDirection(left);
+                }
+                return;
+                
+            }
+            
+            else if (dy>0 && dx>0)
+            {
+                int result = randInt(0, 1);
+                
+                if (result == 0) //Checking if up is valid
+                {
+                    if(checkActorMove(getX(), getY()-1, this))
+                    {
+                        setDirection(down);
+                    }
+                }
+                else if (checkActorMove(getX()-1, getY(), this))
+                {
+                    setDirection(left);
+                }
+                return;
+            }
+            
         }
     }
     if (movementsLeft()>0)
@@ -688,18 +834,32 @@ void SmartZombie::doSomething()
                 break;
         }
         if (movementsLeft()!=0)
+        {
             newMovement(movementsLeft()-1);
+        }
     }
-    
 }
 
+
+
+
+
 DumbZombie::DumbZombie(double x, double y, StudentWorld* sw):Zombie(x,y,sw)
-{}
+{
+    int q = randInt(1, 10);
+    if (q == 1)
+        m_hasVaccine = true;
+    m_hasVaccine = false;
+}
+
+
 
 void DumbZombie::doSomething()
 {
-    if(tryVomit())
+    if(!getInPlay())
         return;
+    
+    
     
     if (!isAlive())
         return; //When a citizen is dead this immediately returns. no modifications are made
@@ -709,6 +869,9 @@ void DumbZombie::doSomething()
         setParalysed(false);
         return;
     }
+    
+    if(tryVomit())
+        return;
     
     setParalysed(true); //Paralyses citizens every alternate tick in connjunction with the if statement above
     
@@ -791,6 +954,12 @@ bool Zombie::isParalysed()
     return m_paralysed;
 }
 
+bool DumbZombie::hasVaccine()
+{
+    return m_hasVaccine;
+}
+
+
 void Zombie::setParalysed(bool paralysis_state)
 {
     m_paralysed = paralysis_state;
@@ -862,14 +1031,17 @@ bool Zombie::tryVomit()
 
 void DumbZombie::dieByFallOrBurnIfAppropriate()
 {
+    setInPlay(false);
     if (getInPlay())
-        getWorld()->recordZombieDied(this);
+        getWorld()->recordZombieDied(this, 0);
 }
 
 void SmartZombie::dieByFallOrBurnIfAppropriate()
 {
+    setInPlay(false);
+    
     if (getInPlay())
-        getWorld()->recordZombieDied(this);
+        getWorld()->recordZombieDied(this, 1);
 }
 //VOMIT
 
@@ -1033,7 +1205,7 @@ void LandmineGoodie::dieByFallOrBurnIfAppropriate()
     setInPlay(false);
 }
 
- //PIT
+//PIT
 
 Pit::Pit(double x, double y, StudentWorld* sw) : ActivatingObject(IID_PIT, x, y, sw, right, 0)
 {
@@ -1052,7 +1224,7 @@ void Pit::activateIfAppropriate(Actor *a)
         return;
     
     a->dieByFallOrBurnIfAppropriate();
-
+    
 }
 
 //LANDMINE
@@ -1073,11 +1245,10 @@ void Landmine::doSomething()
         return;
     if (getTicks()==30)
     {
-        cout<<"CHECL"<<endl;
         m_active = true; //Activate Landmine after 30 ticks
         return;
     }
-
+    
     addTick();
 }
 
@@ -1092,7 +1263,6 @@ void Landmine::activateIfAppropriate(Actor *a)
         return;
     if (isActive())
     {
-        cout<<"here"<<endl;
         setInPlay(false);
         getWorld()->playSound(SOUND_LANDMINE_EXPLODE);
         
@@ -1103,12 +1273,12 @@ void Landmine::activateIfAppropriate(Actor *a)
         
         if (getWorld()->flameCheck(getX() - SPRITE_WIDTH, getY(), this)) //left
         {
-            getWorld()->flamethrowerActivated(getX() - SPRITE_WIDTH, getY(), left);
+            getWorld()->flamethrowerActivated(getX() - SPRITE_WIDTH, getY(), up);
         }
         
         if (getWorld()->flameCheck(getX() + SPRITE_WIDTH, getY(), this)) //right
         {
-            getWorld()->flamethrowerActivated(getX() + SPRITE_WIDTH, getY(), right);
+            getWorld()->flamethrowerActivated(getX() + SPRITE_WIDTH, getY(), up);
         }
         
         if (getWorld()->flameCheck(getX() , getY()+ SPRITE_HEIGHT, this)) //up
@@ -1123,22 +1293,22 @@ void Landmine::activateIfAppropriate(Actor *a)
         
         if (getWorld()->flameCheck(getX() + SPRITE_WIDTH, getY()+ SPRITE_HEIGHT, this)) //NW
         {
-            getWorld()->flamethrowerActivated(getX() + SPRITE_WIDTH, getY()+ SPRITE_HEIGHT, right);
+            getWorld()->flamethrowerActivated(getX() + SPRITE_WIDTH, getY()+ SPRITE_HEIGHT, up);
         }
         
         if (getWorld()->flameCheck(getX() - SPRITE_WIDTH, getY() + SPRITE_HEIGHT, this)) //NE
         {
-            getWorld()->flamethrowerActivated(getX() - SPRITE_WIDTH, getY() + SPRITE_HEIGHT, right);
+            getWorld()->flamethrowerActivated(getX() - SPRITE_WIDTH, getY() + SPRITE_HEIGHT, up);
         }
         
         if (getWorld()->flameCheck(getX() + SPRITE_WIDTH, getY()- SPRITE_HEIGHT, this)) //SW
         {
-            getWorld()->flamethrowerActivated(getX() + SPRITE_WIDTH, getY()- SPRITE_HEIGHT, right);
+            getWorld()->flamethrowerActivated(getX() + SPRITE_WIDTH, getY()- SPRITE_HEIGHT, up);
         }
         
         if (getWorld()->flameCheck(getX() - SPRITE_WIDTH, getY()- SPRITE_HEIGHT, this)) //SW
         {
-            getWorld()->flamethrowerActivated(getX() - SPRITE_WIDTH, getY() - SPRITE_HEIGHT, right);
+            getWorld()->flamethrowerActivated(getX() - SPRITE_WIDTH, getY() - SPRITE_HEIGHT, up);
         }
         
         //Introducing a new pit
